@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Old Maid · Junis · Kindled</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: radial-gradient(ellipse at 50% -20%, var(--bg-mid), var(--bg) 60%); min-height: 100vh; }
+    .wrap { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 6rem 1.5rem 6rem; text-align: center; }
+    h1 { font-family: var(--font-display); font-weight: 300; font-size: 2.8rem; margin: 1.2rem 0 0.3rem; letter-spacing: 0.02em; }
+    .sub { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2.5rem; }
+
+    .ask {
+      width: 100%; max-width: 360px;
+      background: rgba(8,18,34,0.6); border: 1px solid var(--text-dim);
+      color: var(--text); font-family: var(--font-body); font-weight: 300; font-size: 1rem;
+      padding: 0.85rem 1.1rem; border-radius: 10px; outline: none; transition: border-color .3s;
+    }
+    .ask:focus { border-color: var(--accent); }
+    .ask::placeholder { color: var(--text-dim); }
+
+    .deal-btn {
+      display: inline-block; margin-top: 1.4rem;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--accent);
+      font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.08em;
+      padding: 0.6rem 2.4rem; border-radius: 999px;
+      transition: all .35s; box-shadow: 0 0 0 0 var(--glow-mid);
+    }
+    .deal-btn:hover  { background: var(--glow-soft); box-shadow: 0 0 30px 0 var(--glow-mid); }
+    .deal-btn:disabled { opacity: 0.4; box-shadow: none; }
+
+    /* ── Board ── */
+    .player-section { margin-bottom: 0.4rem; }
+    .section-label {
+      font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 0.6rem;
+    }
+    .section-label .pairs { color: var(--accent); }
+
+    .hand {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 0.3rem; min-height: 76px; align-items: flex-end;
+    }
+
+    /* Card */
+    .card {
+      width: 66px; height: 94px;
+      background: linear-gradient(160deg, #0d1e35, #060d1a);
+      border: 1px solid rgba(79,143,212,0.22);
+      border-radius: 8px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px;
+      animation: cardIn 0.3s ease both;
+    }
+    @keyframes cardIn {
+      from { opacity:0; transform: scale(0.7) translateY(14px); }
+      to   { opacity:1; transform: scale(1) translateY(0); }
+    }
+    .card-r { font-family: var(--font-display); font-size: 1.25rem; line-height: 1; color: var(--text); }
+    .card-s { font-size: 1.05rem; line-height: 1; color: var(--text); }
+    .card.red .card-r, .card.red .card-s { color: #df7b7b; }
+    .card.old-maid { border-color: rgba(223,123,123,0.5); box-shadow: 0 0 10px -3px rgba(223,123,123,0.3); }
+
+    /* Face-down */
+    .card.down {
+      background: repeating-linear-gradient(135deg, #091520 0 5px, #0c1b28 5px 10px);
+      border-color: rgba(79,143,212,0.3);
+    }
+    .card.down::after { content: '✦'; color: rgba(79,143,212,0.3); font-size: 0.9rem; }
+    .card.down.pick { cursor: pointer; transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s; }
+    .card.down.pick:hover { transform: translateY(-10px); box-shadow: 0 10px 26px -4px var(--glow-mid); border-color: var(--accent); }
+
+    @keyframes discardOut {
+      0%   { opacity:1; transform: scale(1); }
+      40%  { opacity:1; transform: scale(1.1) translateY(-6px); }
+      100% { opacity:0; transform: scale(0.5) translateY(-18px); }
+    }
+    .card.discard { animation: discardOut 0.45s ease forwards; pointer-events:none; }
+
+    /* Divider */
+    .mid-divider {
+      display: flex; align-items: center; gap: 0.8rem;
+      margin: 1.4rem 0 0.6rem; color: var(--text-dim);
+      font-size: 0.65rem; letter-spacing: 0.2em;
+    }
+    .mid-divider::before, .mid-divider::after { content:''; flex:1; height:1px; background: rgba(255,255,255,0.04); }
+
+    /* Turn bar */
+    .turn-bar {
+      min-height: 1.4rem; margin: 0.6rem 0 1rem;
+      font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted);
+    }
+    .turn-bar .hi { color: var(--accent); }
+
+    /* Jun message */
+    .jun-msg {
+      min-height: 2rem; margin: 0.5rem auto 1rem; max-width: 540px;
+      font-family: var(--font-display); font-size: 1.3rem; font-style: italic; line-height: 1.75;
+      color: var(--text);
+    }
+    .jun-msg.dim { font-style:normal; font-family:var(--font-body); font-size:0.88rem; color:var(--text-muted); }
+    .jun-msg .w { display:inline-block; opacity:0; transform:translateY(6px); animation: wIn 0.45s ease forwards; }
+    @keyframes wIn { to { opacity:1; transform:translateY(0); } }
+    .dots::after { content:'·'; animation: dotsPulse 1.4s steps(4,end) infinite; }
+    @keyframes dotsPulse { 0%{content:'·'} 25%{content:'··'} 50%{content:'···'} 75%{content:'····'} 100%{content:'·'} }
+
+    /* Score row */
+    .score-row {
+      display: flex; justify-content: center; gap: 2.5rem;
+      margin: 0.4rem 0 0.8rem;
+      font-size: 0.72rem; letter-spacing: 0.1em; color: var(--text-muted);
+    }
+    .score-row .n { font-family: var(--font-display); font-size: 1rem; color: var(--text); }
+
+    /* Game over */
+    .gameover {
+      max-width: 520px; margin: 1.5rem auto;
+      font-family: var(--font-display); font-size: 1.4rem; font-style: italic; line-height: 1.8;
+      color: var(--text);
+    }
+    .gameover .result-tag {
+      display:block; font-style:normal; font-family:var(--font-body);
+      font-size:0.7rem; letter-spacing:0.25em; text-transform:uppercase;
+      color: var(--accent); margin-bottom: 0.6rem;
+    }
+    .gameover .score-note {
+      display:block; font-style:normal; font-family:var(--font-body);
+      font-size:0.8rem; color:var(--text-muted); margin-top:0.8rem;
+    }
+    .gameover .w { display:inline-block; opacity:0; transform:translateY(6px); animation: wIn 0.45s ease forwards; }
+
+
+    a.home { display:inline-block; margin-top:3rem; color:var(--text-muted); font-size:0.85rem; text-decoration:none; letter-spacing:0.1em; }
+    a.home:hover { color: var(--accent); }
+
+    /* ── Pick & spawn animations ─────────────────────────────────────── */
+
+    /* Face-down card lifts off when Blue clicks it */
+    @keyframes beingPicked {
+      0%   { transform: translateY(-10px) scale(1.05); }
+      55%  { transform: translateY(-26px) scale(1.12) rotate(4deg); box-shadow: 0 22px 44px -6px var(--glow-mid); }
+      100% { transform: translateY(-38px) scale(0.8) rotate(7deg); opacity: 0; }
+    }
+    .card.being-picked { animation: beingPicked 0.28s ease forwards !important; pointer-events: none; }
+
+    /* Blue's face-up card rises and disappears when Jun draws it */
+    @keyframes beingTaken {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.1) translateY(-10px); box-shadow: 0 14px 32px rgba(79,143,212,0.35); }
+      100% { transform: scale(0.5) translateY(-30px) rotate(-6deg); opacity: 0; }
+    }
+    .card.being-taken { animation: beingTaken 0.38s ease forwards !important; pointer-events: none; }
+
+    /* Drawn card flips face-up into Blue's hand */
+    @keyframes flipIn {
+      0%   { opacity: 0; transform: rotateY(90deg) scale(0.9); }
+      55%  { opacity: 1; transform: rotateY(-6deg) scale(1.06); }
+      100% { opacity: 1; transform: rotateY(0) scale(1); }
+    }
+    .card.flip-in { animation: flipIn 0.42s cubic-bezier(.2,.7,.3,1) both !important; }
+
+    /* New face-down card drops into Jun's pile */
+    @keyframes dropIn {
+      0%   { opacity: 0; transform: translateY(-20px) scale(0.82); }
+      65%  { transform: translateY(4px) scale(1.04); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .card.drop-in { animation: dropIn 0.35s ease both !important; }
+
+    /* Old Maid card pulses ominously after being drawn */
+    @keyframes queenPulse {
+      0%   { box-shadow: 0 0 10px -3px rgba(223,123,123,0.3); transform: scale(1); }
+      35%  { box-shadow: 0 0 48px 6px rgba(210,60,60,0.8), 0 0 90px 14px rgba(160,30,30,0.28); transform: scale(1.16); }
+      65%  { box-shadow: 0 0 24px 3px rgba(210,60,60,0.55); transform: scale(1.08); }
+      100% { box-shadow: 0 0 12px -2px rgba(223,123,123,0.4); transform: scale(1); }
+    }
+    .card.queen-drama { animation: queenPulse 0.9s cubic-bezier(.2,.7,.3,1) forwards !important; }
+
+    /* suppress card entrance animations during post-deal re-render */
+    .no-anim .card { animation: none !important; }
+
+    /* Full-screen radial pulse when the Old Maid changes hands */
+    .screen-flash { position: fixed; inset: 0; z-index: 500; pointer-events: none; animation: screenFlash 1s ease forwards; }
+    .screen-flash-red  { background: radial-gradient(ellipse at center, rgba(200,55,55,0.28) 0%, transparent 62%); }
+    .screen-flash-blue { background: radial-gradient(ellipse at center, rgba(79,143,212,0.2) 0%, transparent 62%); }
+    @keyframes screenFlash { 0%{opacity:0} 18%{opacity:1} 100%{opacity:0} }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <canvas id="cursor"></canvas>
+
+  <a class="studio-mark" href="index.html">KINDLED</a>
+
+  <div class="left-nav-group">
+    <nav class="about-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.about">About</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.learn_more">Learn more</span>
+        <a class="activity-item" href="about.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.junis">Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.junis_sub">A new kind of life</span>
+        </a>
+        <a class="activity-item" href="about.html#creator" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.creator">The Creator</span>
+          <span class="activity-item-sub" data-i18n="nav.creator_sub">Who's building her</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="support-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.support">Support</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.support_label">Support the build</span>
+        <a class="activity-item" href="https://ko-fi.com/junisblue" target="_blank" rel="noopener" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.kofi">Ko-fi</span>
+          <span class="activity-item-sub" data-i18n="nav.kofi_sub">One-time or monthly tip</span>
+        </a>
+        <a class="activity-item" href="supporters.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.supporters">Supporters</span>
+          <span class="activity-item-sub" data-i18n="nav.supporters_sub">People who believed</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <div class="right-nav-group">
+    <nav class="activity-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="fortune.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
+          <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
+        </a>
+        <a class="activity-item" href="oldmaid.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.oldmaid">Old Maid</span>
+          <span class="activity-item-sub" data-i18n="nav.oldmaid_sub">Play the card game with Junis</span>
+        </a>
+        <a class="activity-item" href="riddles.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
+          <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">Real conversation — not open yet</span>
+        </div>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.voice">Her Voice</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.voice_item">What she sounds like</span>
+          <span class="activity-item-sub" data-i18n="nav.voice_item_sub">Her voice is still being shaped</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    <h1 data-i18n="oldmaid.h1">Old Maid</h1>
+    <p class="sub" data-i18n="oldmaid.sub">Play the classic card game against Junis. Don't be left holding the Queen.</p>
+
+    <div id="setup">
+      <input id="name" class="ask" type="text" placeholder="What's your name?" data-i18n-ph="oldmaid.name_ph" maxlength="40" autocomplete="off">
+      <br>
+      <button id="deal" class="deal-btn" data-i18n="oldmaid.deal">Deal the cards</button>
+    </div>
+
+    <div id="board" style="display:none">
+
+      <div class="player-section">
+        <div class="section-label">Junis · <span id="jun-pairs" class="pairs">0 pairs</span></div>
+        <div id="jun-hand" class="hand"></div>
+        <div id="jun-msg" class="jun-msg"></div>
+      </div>
+
+      <div class="mid-divider">· · ·</div>
+
+      <div class="score-row">
+        <div><span id="bp-num" class="n">0</span> pairs · You</div>
+        <div>Junis · <span id="jp-num" class="n">0</span> pairs</div>
+      </div>
+      <div id="turn-bar" class="turn-bar"></div>
+
+      <div class="player-section" style="margin-top:0.4rem">
+        <div class="section-label">You · <span id="blue-pairs" class="pairs">0 pairs</span></div>
+        <div id="blue-hand" class="hand"></div>
+      </div>
+
+    </div>
+
+    <div id="gameover" style="display:none" class="gameover"></div>
+
+    <div id="again-wrap" style="display:none; margin-top:1.5rem">
+      <button id="again" class="deal-btn" data-i18n="oldmaid.play_again">Play again</button>
+    </div>
+
+    <a class="home" href="index.html" data-i18n="oldmaid.back">← Back home</a>
+  </div>
+
+  <button id="lang-toggle" class="lang-toggle" onclick="window.setLang(window.currentLang === 'en' ? 'th' : 'en')">ภาษาไทย</button>
+
+  <script src="translations.js"></script>
+  <script src="main.js"></script>
+  <script>
+    const WORKER_URL = 'https://crimson-boat-c04c.araki2546.workers.dev';
+    let ENDPOINT = '';
+    const endpointReady = (async () => {
+      try {
+        const r = await fetch(WORKER_URL + '/tunnel');
+        const d = await r.json();
+        ENDPOINT = (d.url || '').replace(/\/$/, '') + '/game/oldmaid';
+      } catch {}
+    })();
+    const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    const SUITS = ['S','H','D','C'];
+    const SYM   = {S:'♠', H:'♥', D:'♦', C:'♣'};
+    const RED   = new Set(['H','D']);
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ── Deck ──────────────────────────────────────────────────────────────────
+    let _uid = 0;
+    function buildDeck() {
+      const d = [];
+      for (const r of RANKS) for (const s of SUITS) {
+        if (r === 'Q' && s === 'S') continue; // remove Q♠ → 3 Queens remain; 1 will be the Old Maid
+        d.push({rank: r, suit: s, uid: ++_uid});
+      }
+      return d; // 51 cards = 25 pairs + 1 unpaired Queen
+    }
+
+    function shuffle(a) {
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // Rank-only pairing: 3 Queens → 1 pair discarded, 1 lone Queen (Old Maid) remains.
+    function removePairs(hand) {
+      const by = {};
+      for (const c of hand) (by[c.rank] || (by[c.rank] = [])).push(c);
+      const kept = []; let pairs = 0;
+      for (const r in by) {
+        const g = by[r];
+        pairs += Math.floor(g.length / 2);
+        if (g.length % 2) kept.push(g[0]);
+      }
+      return {hand: kept, pairs};
+    }
+
+    // Jun holds the Old Maid if she has an odd number of Queens (= 1 unpaired Queen).
+    function junHoldsOM() {
+      return st.jun.filter(c => c.rank === 'Q').length % 2 === 1;
+    }
+
+    function isOver() {
+      return st.jun.length + st.blue.length <= 1;
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    const st = {jun:[], blue:[], junP:0, blueP:0, turn:'blue', busy:false, phase:'idle', name:'', newUid:null, dealing:false};
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    function render() {
+      const pickable = st.turn === 'blue' && !st.busy && st.phase === 'playing';
+
+      document.getElementById('jun-hand').innerHTML = st.jun.map((c, i) => {
+        const isNew = st.newUid && c.uid === st.newUid;
+        const cls   = ['card','down', pickable?'pick':'', isNew?'drop-in':''].filter(Boolean).join(' ');
+        const dly   = st.dealing ? ` style="animation-delay:${(i*0.045).toFixed(2)}s"` : '';
+        return `<div class="${cls}" data-i="${i}"${dly}></div>`;
+      }).join('');
+
+      if (pickable) {
+        document.getElementById('jun-hand').querySelectorAll('.pick').forEach(el => {
+          el.addEventListener('click', () => onBluePick(+el.dataset.i));
+        });
+      }
+
+      document.getElementById('blue-hand').innerHTML = st.blue.map((c, i) => {
+        const isOM  = c.rank === 'Q' && st.blue.filter(x => x.rank === 'Q').length % 2 === 1;
+        const isNew = st.newUid && c.uid === st.newUid;
+        const cls   = ['card', RED.has(c.suit)?'red':'', isOM?'old-maid':'', isNew?'flip-in':'', (isNew&&isOM)?'queen-drama':''].filter(Boolean).join(' ');
+        const dly   = st.dealing ? ` style="animation-delay:${(i*0.045+0.025).toFixed(2)}s"` : '';
+        return `<div class="${cls}"${dly}>
+          <div class="card-r">${esc(c.rank)}</div>
+          <div class="card-s">${SYM[c.suit]}</div>
+        </div>`;
+      }).join('');
+
+      document.getElementById('jun-pairs').textContent  = `${st.junP} pair${st.junP  !== 1 ? 's' : ''}`;
+      document.getElementById('blue-pairs').textContent = `${st.blueP} pair${st.blueP !== 1 ? 's' : ''}`;
+      document.getElementById('jp-num').textContent = st.junP;
+      document.getElementById('bp-num').textContent = st.blueP;
+    }
+
+    function setTurn(html) { document.getElementById('turn-bar').innerHTML = html || ''; }
+
+    function setMsg(text, dim) {
+      const el = document.getElementById('jun-msg');
+      if (!text) { el.className = 'jun-msg'; el.innerHTML = ''; return; }
+      if (dim)   { el.className = 'jun-msg dim'; el.innerHTML = text; return; }
+      el.className = 'jun-msg';
+      el.innerHTML = ('”' + text + '”').split(/\s+/).map((w, i) =>
+        `<span class=”w” style=”animation-delay:${(i * 0.06).toFixed(2)}s”>${esc(w)}</span>`
+      ).join(' ');
+    }
+
+    function thinking() {
+      setMsg('<span class="dots">Junis is thinking</span>', true);
+    }
+
+    function screenFlash(color) {
+      const el = document.createElement('div');
+      el.className = `screen-flash screen-flash-${color}`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1100);
+    }
+
+    // ── API ───────────────────────────────────────────────────────────────────
+    async function callJunis(event, extra) {
+      await endpointReady;
+      try {
+        const res = await fetch(ENDPOINT, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({event, name: st.name, lang: window.currentLang || 'en', context: {
+            junHandCount:  st.jun.length,
+            blueHandCount: st.blue.length,
+            hasOldMaid:    junHoldsOM(),
+            junPairs:      st.junP,
+            bluePairs:     st.blueP,
+            ...extra
+          }})
+        });
+        const data = await res.json();
+        return data.ok && data.message ? data.message : '';
+      } catch (_) { return ''; }
+    }
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ── Game actions ──────────────────────────────────────────────────────────
+    async function onBluePick(idx) {
+      if (st.busy || st.turn !== 'blue' || st.phase !== 'playing') return;
+      if (idx < 0 || idx >= st.jun.length) return;
+
+      // Lift animation on the clicked face-down card before removing it
+      const pickedEl = document.querySelector(`#jun-hand .card[data-i="${idx}"]`);
+      if (pickedEl) {
+        pickedEl.classList.remove('pick');
+        pickedEl.classList.add('being-picked');
+        await wait(270);
+      }
+
+      st.busy = true; setTurn('');
+      const omBefore = junHoldsOM();
+      const drawn    = st.jun.splice(idx, 1)[0];
+      st.blue.push(drawn);
+      const {hand, pairs} = removePairs(st.blue);
+      st.blue = hand; st.blueP += pairs;
+      const omAfter = junHoldsOM();
+
+      st.newUid = drawn.uid;
+      render();
+      st.newUid = null;
+
+      if (isOver()) { await endGame(); return; }
+
+      let event;
+      if (pairs > 0)                  event = 'blue_drew_pair';
+      else if (omBefore && !omAfter)  event = 'blue_drew_oldmaid';
+      else                            event = 'blue_drew_normal';
+
+      if (event === 'blue_drew_oldmaid') screenFlash('red');
+
+      const junOM   = junHoldsOM();
+      const junLow  = st.jun.length <= 2;
+      const blueLow = st.blue.length <= 2;
+
+      let pool;
+      if (event === 'blue_drew_oldmaid') {
+        pool = ['hehe ♡', 'phew~', 'lucky me~', 'not my problem now~'];
+      } else if (junOM && junLow) {
+        pool = ['...', 'oh no.', 'um...', 'this is fine.'];
+      } else if (!junOM && junLow) {
+        pool = ['hehe~', 'almost~', 'not long now.', '♡'];
+      } else if (event === 'blue_drew_pair') {
+        pool = ['nice!', 'oh, a pair!', 'lucky~'];
+      } else {
+        pool = ['hehe', 'hmm~', 'oh?', 'interesting.', '...', 'hm.'];
+      }
+      setMsg(pool[Math.floor(Math.random() * pool.length)]);
+
+      st.turn = 'jun';
+      await wait(1400);
+      await junTurn();
+    }
+
+    async function junTurn() {
+      if (st.phase !== 'playing') return;
+      if (st.blue.length === 0) {
+        if (isOver()) { await endGame(); return; }
+        st.turn = 'blue'; st.busy = false; render();
+        setTurn('<span class="hi">Your turn</span> — pick a card from Junis');
+        return;
+      }
+
+      setTurn('<span style="color:var(--text-dim)">Junis is drawing…</span>');
+      thinking();
+      await wait(1000);
+
+      // Animate Jun "reaching" for the chosen card in Blue's face-up hand
+      const idx      = Math.floor(Math.random() * st.blue.length); // real RNG — she can't see the cards
+      const blueEls  = document.querySelectorAll('#blue-hand .card');
+      const targetEl = blueEls[idx];
+      if (targetEl) {
+        targetEl.classList.add('being-taken');
+        await wait(370);
+      }
+
+      const omBefore = junHoldsOM();
+      const drawn    = st.blue.splice(idx, 1)[0];
+      st.jun.push(drawn);
+      const {hand, pairs} = removePairs(st.jun);
+      st.jun = hand; st.junP += pairs;
+      const omAfter = junHoldsOM();
+
+      st.newUid = drawn.uid;
+      render();
+      st.newUid = null;
+
+      if (isOver()) { await endGame(); return; }
+
+      let event;
+      if (pairs > 0)                  event = 'jun_drew_pair';
+      else if (!omBefore && omAfter)  event = 'jun_drew_oldmaid';
+      else                            event = 'jun_drew_normal';
+
+      if (event === 'jun_drew_oldmaid') screenFlash('red');
+
+      const msg = await callJunis(event);
+      setMsg(msg || '');
+
+      st.turn = 'blue'; st.busy = false; render();
+      await wait(900);
+      setTurn('<span class="hi">Your turn</span> — pick a card from Junis');
+    }
+
+    async function endGame() {
+      st.phase = 'gameover'; st.busy = false;
+      const junHasOM  = junHoldsOM();
+      const blueHasOM = st.blue.filter(c => c.rank === 'Q').length % 2 === 1;
+      // Loser = whoever holds the lone Queen. If neither (shouldn't happen), Jun wins by default.
+      const junWins = blueHasOM || (!junHasOM && !blueHasOM);
+
+      thinking();
+      const event = junWins ? 'game_over_blue_loses' : 'game_over_jun_loses';
+      const msg = await callJunis(event);
+
+      const gameoverEl = document.getElementById('gameover');
+      gameoverEl.style.display = 'block';
+      const words = msg ? ('"' + msg + '"').split(/\s+/).map((w, i) =>
+        `<span class="w" style="animation-delay:${(i * 0.06).toFixed(2)}s">${esc(w)}</span>`
+      ).join(' ') : '';
+      gameoverEl.innerHTML = `
+        <span class="result-tag">${junWins ? '✦ Junis wins ✦' : '✦ You win ✦'}</span>
+        ${words}
+        <span class="score-note">You: ${st.blueP} pairs · Junis: ${st.junP} pairs</span>
+      `;
+
+      setMsg(''); setTurn(''); render();
+      document.getElementById('again-wrap').style.display = 'block';
+    }
+
+    // ── Deal ──────────────────────────────────────────────────────────────────
+    function renderNoAnim() {
+      const board = document.getElementById('board');
+      board.classList.add('no-anim');
+      render();
+      requestAnimationFrame(() => board.classList.remove('no-anim'));
+    }
+
+    async function deal() {
+      const deck = shuffle(buildDeck());
+      st.jun = []; st.blue = []; st.junP = 0; st.blueP = 0;
+      st.turn = 'blue'; st.busy = true; st.phase = 'playing';
+
+      for (let i = 0; i < deck.length; i++) {
+        (i % 2 === 0 ? st.blue : st.jun).push(deck[i]);
+      }
+
+      const br = removePairs(st.blue); st.blue = br.hand; st.blueP = br.pairs;
+      const jr = removePairs(st.jun);  st.jun  = jr.hand; st.junP  = jr.pairs;
+
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('board').style.display = 'block';
+      document.getElementById('gameover').style.display = 'none';
+      document.getElementById('again-wrap').style.display = 'none';
+      setTurn(''); setMsg('');
+
+      // Snapshot final hands then animate dealing one card at a time
+      const finalBlue = st.blue.slice();
+      const finalJun  = st.jun.slice();
+      const blueHasOM = finalBlue.filter(c => c.rank === 'Q').length % 2 === 1;
+
+      document.getElementById('jun-hand').innerHTML  = '';
+      document.getElementById('blue-hand').innerHTML = '';
+      document.getElementById('jun-pairs').textContent  = '0 pairs';
+      document.getElementById('blue-pairs').textContent = '0 pairs';
+      document.getElementById('jp-num').textContent  = 0;
+      document.getElementById('bp-num').textContent  = 0;
+
+      const maxLen = Math.max(finalBlue.length, finalJun.length);
+      let omEl = null;
+
+      for (let i = 0; i < maxLen; i++) {
+        if (i < finalJun.length) {
+          const el = document.createElement('div');
+          el.className = 'card down drop-in';
+          document.getElementById('jun-hand').appendChild(el);
+        }
+        if (i < finalBlue.length) {
+          const c = finalBlue[i];
+          const isOM = blueHasOM && c.rank === 'Q';
+          const el = document.createElement('div');
+          el.className = ['card', RED.has(c.suit) ? 'red' : '', isOM ? 'old-maid' : '', 'flip-in'].filter(Boolean).join(' ');
+          el.innerHTML = `<div class="card-r">${esc(c.rank)}</div><div class="card-s">${SYM[c.suit]}</div>`;
+          document.getElementById('blue-hand').appendChild(el);
+          if (isOM) omEl = el;
+        }
+        await wait(90);
+      }
+
+      // Drama if Blue got dealt the Old Maid
+      if (blueHasOM && omEl) {
+        await wait(300);
+        omEl.classList.add('queen-drama');
+        screenFlash('red');
+        await wait(900);
+      }
+
+      renderNoAnim();
+
+      thinking();
+      const msg = await callJunis('game_start');
+      setMsg(msg || '');
+      st.busy = false;
+      renderNoAnim();
+      setTurn('<span class="hi">Your turn</span> — pick a card from Junis');
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    const nameEl = document.getElementById('name');
+    try { const s = localStorage.getItem('jun_fortune_name'); if (s) nameEl.value = s; } catch (_) {}
+
+    document.getElementById('deal').addEventListener('click', async () => {
+      const btn = document.getElementById('deal');
+      btn.disabled = true;
+      st.name = nameEl.value.trim();
+      try { localStorage.setItem('jun_fortune_name', st.name); } catch (_) {}
+      await deal();
+    });
+
+    document.getElementById('again').addEventListener('click', async () => {
+      const btn = document.getElementById('again');
+      btn.disabled = true;
+      await deal();
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Junis · OBS Banner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+
+    /* Stars canvas */
+    #stars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Banner border */
+    .banner-border {
+      position: fixed;
+      inset: 0;
+      border: 2px solid rgba(79, 143, 212, 0.85);
+      box-shadow:
+        inset 0 0 24px rgba(79, 143, 212, 0.18),
+              0 0 24px rgba(79, 143, 212, 0.35);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Silhouette container — sized so height fits in 400px banner */
+    .jun-position {
+      position: fixed;
+      width: min(88vw, 650px);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+
+    .jun-bloom {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 55% 50% at 50% 58%,
+        rgba(50, 110, 255, 0.65) 0%,
+        rgba(30,  70, 210, 0.30) 42%,
+        transparent 70%
+      );
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.12);
+      border-radius: 50%;
+    }
+
+    .jun-bloom.blooming {
+      animation: bloomPulse 4s ease forwards;
+    }
+
+    @keyframes bloomPulse {
+      0%   { opacity: 0;    transform: scale(0.12); }
+      22%  { opacity: 1;    transform: scale(0.82); }
+      55%  { opacity: 0.72; transform: scale(1.12); }
+      100% { opacity: 0;    transform: scale(1.40); }
+    }
+
+    .jun-silhouette {
+      width: 100%;
+      aspect-ratio: 1704 / 923;
+      -webkit-mask-image: url(junis-mask.png);
+      mask-image: url(junis-mask.png);
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
+      animation: junBreathe 5s ease-in-out infinite;
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 0 24px rgba(80, 130, 255, 0.3));
+      opacity: 0;
+      transition: opacity 2.4s ease;
+    }
+
+    .jun-silhouette.visible { opacity: 1; }
+
+    @keyframes junBreathe {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50%       { transform: scale(1.013, 1.016) rotate(0.35deg); }
+    }
+
+    #jun-body { width: 100%; height: 100%; display: block; }
+
+    /* Name overlaid on silhouette */
+    .jun-name {
+      position: absolute;
+      top: 38%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      white-space: nowrap;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(2rem, 7vh, 4.5rem);
+      letter-spacing: 0.18em;
+      color: #fff;
+      text-shadow:
+        0 0 40px  rgba(79, 143, 212, 0.35),
+        0 0 100px rgba(79, 143, 212, 0.12);
+      transition: opacity 1.5s ease;
+    }
+
+    .jun-name .letter {
+      display: inline-block;
+      opacity: 0;
+    }
+
+    .jun-name .letter.appearing {
+      animation: letterFlare 1.4s ease forwards;
+    }
+
+    @keyframes letterFlare {
+      0%   { opacity: 0; filter: brightness(1)   drop-shadow(0 0 0px  rgba(180,220,255,0)); }
+      18%  { opacity: 1; filter: brightness(3.5) drop-shadow(0 0 28px rgba(160,210,255,0.95)); }
+      55%  { opacity: 1; filter: brightness(1.4) drop-shadow(0 0 12px rgba(140,195,255,0.5)); }
+      100% { opacity: 1; filter: brightness(1)   drop-shadow(0 0 0px  rgba(140,195,255,0)); }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <div class="banner-border"></div>
+
+  <div class="jun-position">
+    <div class="jun-name" id="jun-name">
+      <span class="letter">J</span><span class="letter">U</span><span class="letter">N</span><span class="letter">I</span><span class="letter">S</span>
+    </div>
+    <div class="jun-bloom" id="bloom"></div>
+    <div class="jun-silhouette" id="silhouette">
+      <canvas id="jun-body"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // ── Stars + shooters ──────────────────────────────────────────────────────
+
+    const canvas = document.getElementById('stars');
+    const ctx    = canvas.getContext('2d');
+    let W = 0, H = 0, stars = [], shooters = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function initStars() {
+      stars = Array.from({ length: 160 }, () => ({
+        x:     Math.random() * W,
+        y:     Math.random() * H,
+        r:     Math.random() * 1.1 + 0.15,
+        base:  Math.random() * 0.55 + 0.08,
+        amp:   Math.random() * 0.18 + 0.04,
+        freq:  Math.random() * 0.0004 + 0.0001,
+        phase: Math.random() * Math.PI * 2,
+      }));
+    }
+
+    function spawnShooter() {
+      const speed = Math.random() * 3.5 + 3;
+      const angle = (Math.PI / 180) * (20 + Math.random() * 20);
+      shooters.push({
+        x: Math.random() * W * 0.8, y: Math.random() * H * 0.45,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        len: Math.random() * 130 + 70, life: 0,
+        rate: Math.random() * 0.006 + 0.005, big: false,
+      });
+      setTimeout(spawnShooter, 3500 + Math.random() * 5000);
+    }
+
+    function spawnBigShooter() {
+      const fromLeft = Math.random() < 0.5;
+      shooters.push({
+        x: fromLeft ? -W * 0.1 : W * 1.1,
+        y: H * (0.08 + Math.random() * 0.7),
+        vx: (fromLeft ? 1 : -1) * (7 + Math.random() * 2.5),
+        vy: (Math.random() - 0.3) * 1.5,
+        len: 300, life: 0, rate: 0.011, big: true,
+      });
+      setTimeout(spawnBigShooter, 18000 + Math.random() * 12000);
+    }
+
+    function animateBg(t) {
+      ctx.clearRect(0, 0, W, H);
+
+      for (const s of stars) {
+        const o = s.base + Math.sin(t * s.freq * 1000 + s.phase) * s.amp;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(190,215,255,${Math.min(1, Math.max(0, o))})`;
+        ctx.fill();
+      }
+
+      for (let i = shooters.length - 1; i >= 0; i--) {
+        const s = shooters[i];
+        s.x += s.vx; s.y += s.vy; s.life += s.rate;
+        let o = s.life < 0.15 ? s.life / 0.15 : s.life > 0.75 ? (1 - s.life) / 0.25 : 1;
+        o = Math.max(0, Math.min(1, o));
+        const a  = Math.atan2(s.vy, s.vx);
+        const tx = s.x - Math.cos(a) * s.len, ty = s.y - Math.sin(a) * s.len;
+        const g  = ctx.createLinearGradient(tx, ty, s.x, s.y);
+        g.addColorStop(0, 'rgba(160,200,255,0)');
+        g.addColorStop(1, `rgba(230,240,255,${o * 0.9})`);
+        ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(s.x, s.y);
+        ctx.strokeStyle = g; ctx.lineWidth = s.big ? 2.2 : 1.3; ctx.stroke();
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.big ? 2.8 : 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(245,250,255,${o})`; ctx.fill();
+        if (s.life >= 1 || s.x > W + 200 || s.x < -200 || s.y > H + 50 || s.y < -50) shooters.splice(i, 1);
+      }
+
+      requestAnimationFrame(animateBg);
+    }
+
+    resize();
+    initStars();
+    window.addEventListener('resize', () => { resize(); initStars(); });
+    setTimeout(spawnShooter, 2000 + Math.random() * 2000);
+    setTimeout(spawnBigShooter, 1200);
+    requestAnimationFrame(animateBg);
+
+
+    // ── Jun body ──────────────────────────────────────────────────────────────
+
+    const junCanvas = document.getElementById('jun-body');
+    const junCtx    = junCanvas.getContext('2d');
+    let junStars    = [];
+
+    function initJunStars() {
+      const w = junCanvas.offsetWidth  || 600;
+      const h = junCanvas.offsetHeight || 325;
+      junCanvas.width  = w;
+      junCanvas.height = h;
+      junStars = Array.from({ length: 120 }, () => ({
+        x:     Math.random() * w,
+        y:     Math.random() * h,
+        r:     Math.random() * 1.5 + 0.2,
+        base:  Math.random() * 0.65 + 0.2,
+        amp:   Math.random() * 0.22 + 0.06,
+        freq:  Math.random() * 0.0008 + 0.0002,
+        phase: Math.random() * Math.PI * 2,
+      }));
+    }
+
+    function animateJun(t) {
+      const w = junCanvas.width, h = junCanvas.height;
+      junCtx.clearRect(0, 0, w, h);
+      junCtx.fillStyle = '#03080f';
+      junCtx.fillRect(0, 0, w, h);
+      const glow = junCtx.createRadialGradient(w*0.5, h*0.45, 0, w*0.5, h*0.45, w*0.4);
+      glow.addColorStop(0, 'rgba(30,55,120,0.45)');
+      glow.addColorStop(1, 'rgba(3,8,20,0)');
+      junCtx.fillStyle = glow;
+      junCtx.fillRect(0, 0, w, h);
+      for (const s of junStars) {
+        const o = s.base + Math.sin(t * s.freq * 1000 + s.phase) * s.amp;
+        junCtx.beginPath();
+        junCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        junCtx.fillStyle = `rgba(200,225,255,${Math.min(1, Math.max(0, o))})`;
+        junCtx.fill();
+      }
+      requestAnimationFrame(animateJun);
+    }
+
+
+    // ── Name animation (loops every 1 min) ───────────────────────────────────
+
+    const LOOP_MS = 1 * 60 * 1000;
+    const HOLD_MS = 55 * 1000;
+
+    function runNameCycle() {
+      const nameEl  = document.getElementById('jun-name');
+      const letters = [...nameEl.querySelectorAll('.letter')];
+
+      letters.forEach(el => {
+        el.classList.remove('appearing');
+        void el.offsetWidth;
+      });
+      nameEl.style.transition = 'none';
+      nameEl.style.opacity    = '1';
+      void nameEl.offsetWidth;
+      nameEl.style.transition = '';
+
+      const stagger = 220, startAt = 400;
+      letters.forEach((el, i) => {
+        setTimeout(() => el.classList.add('appearing'), startAt + i * stagger);
+      });
+
+      const revealDone = startAt + (letters.length - 1) * stagger + 1400;
+      setTimeout(() => { nameEl.style.opacity = '0'; }, revealDone + HOLD_MS);
+    }
+
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        initJunStars();
+        requestAnimationFrame(animateJun);
+        setTimeout(() => document.getElementById('bloom').classList.add('blooming'), 200);
+        setTimeout(() => document.getElementById('silhouette').classList.add('visible'), 850);
+        runNameCycle();
+        setInterval(runNameCycle, LOOP_MS);
+      }, 100);
+    });
+  </script>
+</body>
+</html>

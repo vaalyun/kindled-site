@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riddles · Junis · Kindled</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: radial-gradient(ellipse at 50% -20%, var(--bg-mid), var(--bg) 60%); min-height: 100vh; }
+    .wrap { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 6rem 1.5rem 6rem; text-align: center; }
+    h1 { font-family: var(--font-display); font-weight: 300; font-size: 2.8rem; margin: 1.2rem 0 0.3rem; letter-spacing: 0.02em; }
+    .sub { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2.5rem; }
+
+    .riddle-box {
+      min-height: 4rem;
+      margin: 2.2rem 0 1.8rem;
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-style: italic;
+      line-height: 2;
+      color: var(--text);
+    }
+    .riddle-box .w { display: inline-block; opacity: 0; transform: translateY(8px); animation: wordIn 0.55s ease forwards; }
+    @keyframes wordIn { to { opacity: 1; transform: translateY(0); } }
+
+    .field {
+      width: 100%; max-width: 400px;
+      background: rgba(8,18,34,0.6);
+      border: 1px solid var(--text-dim);
+      color: var(--text);
+      font-family: var(--font-body); font-weight: 300; font-size: 1rem;
+      padding: 0.85rem 1.1rem; border-radius: 10px; outline: none;
+      transition: border-color .3s;
+    }
+    .field:focus { border-color: var(--accent); }
+    .field::placeholder { color: var(--text-dim); }
+
+    .btn-row { display: flex; gap: 0.7rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+
+    .main-btn {
+      display: inline-block; background: transparent; color: var(--text);
+      border: 1px solid var(--accent);
+      font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.08em;
+      padding: 0.6rem 2.4rem; border-radius: 999px;
+      transition: all .35s; box-shadow: 0 0 0 0 var(--glow-mid);
+    }
+    .main-btn:hover { background: var(--glow-soft); box-shadow: 0 0 30px 0 var(--glow-mid); }
+    .main-btn:disabled { opacity: 0.4; pointer-events: none; box-shadow: none; }
+
+    .guess-btn {
+      display: inline-block; background: transparent; color: var(--text);
+      border: 1px solid var(--accent);
+      font-family: var(--font-display); font-size: 1.1rem; letter-spacing: 0.08em;
+      padding: 0.5rem 1.8rem; border-radius: 999px;
+      transition: all .35s;
+    }
+    .guess-btn:hover { background: var(--glow-soft); box-shadow: 0 0 24px 0 var(--glow-mid); }
+    .guess-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+    .soft-btn {
+      display: inline-block; background: transparent; color: var(--text-muted);
+      border: 1px solid var(--text-dim);
+      font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0.12em;
+      padding: 0.38rem 1.1rem; border-radius: 999px;
+      transition: color .3s, border-color .3s;
+    }
+    .soft-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .soft-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+    /* Attempt pips */
+    .pip-row { display: flex; justify-content: center; gap: 6px; margin: 1.2rem 0 0.8rem; min-height: 14px; }
+    .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); opacity: 0.3; transition: all 0.4s; }
+    .pip.wrong { background: #c97; opacity: 1; }
+
+    /* Reaction */
+    .reaction {
+      max-width: 520px; margin: 1.5rem auto 0; min-height: 2rem;
+      font-family: var(--font-display); font-size: 1.3rem; font-style: italic; line-height: 1.9;
+      color: var(--text);
+    }
+    .reaction.dim { font-style: normal; font-family: var(--font-body); font-size: 0.95rem; color: var(--text-muted); }
+    .reaction .w { display: inline-block; opacity: 0; transform: translateY(6px); animation: wordIn 0.45s ease forwards; }
+    .dots::after { content: '·'; animation: dots 1.4s steps(4,end) infinite; }
+    @keyframes dots { 0%{content:'·'} 25%{content:'··'} 50%{content:'···'} 75%{content:'····'} 100%{content:'·'} }
+
+    a.home { display: inline-block; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; text-decoration: none; letter-spacing: 0.1em; }
+    a.home:hover { color: var(--accent); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <canvas id="cursor"></canvas>
+
+  <a class="studio-mark" href="index.html">KINDLED</a>
+
+  <div class="left-nav-group">
+    <nav class="about-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.about">About</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.learn_more">Learn more</span>
+        <a class="activity-item" href="about.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.junis">Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.junis_sub">A new kind of life</span>
+        </a>
+        <a class="activity-item" href="about.html#creator" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.creator">The Creator</span>
+          <span class="activity-item-sub" data-i18n="nav.creator_sub">Who's building her</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="support-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.support">Support</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.support_label">Support the build</span>
+        <a class="activity-item" href="https://ko-fi.com/junisblue" target="_blank" rel="noopener" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.kofi">Ko-fi</span>
+          <span class="activity-item-sub" data-i18n="nav.kofi_sub">One-time or monthly tip</span>
+        </a>
+        <a class="activity-item" href="supporters.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.supporters">Supporters</span>
+          <span class="activity-item-sub" data-i18n="nav.supporters_sub">People who believed</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <div class="right-nav-group">
+    <nav class="activity-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="fortune.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
+          <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
+        </a>
+        <a class="activity-item" href="oldmaid.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.oldmaid">Old Maid</span>
+          <span class="activity-item-sub" data-i18n="nav.oldmaid_sub">Play the card game with Junis</span>
+        </a>
+        <a class="activity-item" href="riddles.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
+          <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">Real conversation — not open yet</span>
+        </div>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.voice">Her Voice</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.voice_item">What she sounds like</span>
+          <span class="activity-item-sub" data-i18n="nav.voice_item_sub">Her voice is still being shaped</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    <h1 data-i18n="riddles.h1">Riddles</h1>
+    <p class="sub" data-i18n="riddles.sub">She poses the riddle. You find the answer.</p>
+
+    <input id="name" class="field" type="text" placeholder="What's your name?" data-i18n-ph="riddles.name_ph" maxlength="40" autocomplete="off" style="margin-bottom: 1.4rem">
+
+    <div class="btn-row">
+      <button id="pose-btn" class="main-btn" data-i18n="riddles.pose">Ask for a riddle</button>
+    </div>
+
+    <div id="riddle-box" class="riddle-box hidden"></div>
+
+    <div id="pip-row" class="pip-row hidden"></div>
+
+    <div id="guess-area" class="hidden">
+      <input id="guess-input" class="field" type="text" placeholder="Your answer…" data-i18n-ph="riddles.guess_ph" maxlength="80" autocomplete="off">
+      <div class="btn-row">
+        <button id="guess-btn" class="guess-btn" data-i18n="riddles.guess">Guess</button>
+        <button id="hint-btn" class="soft-btn hidden" data-i18n="riddles.hint">Hint</button>
+        <button id="giveup-btn" class="soft-btn hidden" data-i18n="riddles.giveup">Give up</button>
+      </div>
+    </div>
+
+    <div id="reaction" class="reaction"></div>
+
+    <div id="again-row" class="btn-row hidden" style="margin-top: 2rem">
+      <button id="again-btn" class="main-btn" data-i18n="riddles.again">New riddle</button>
+    </div>
+
+    <a class="home" href="index.html" data-i18n="riddles.back">← Back home</a>
+  </div>
+
+  <button id="lang-toggle" class="lang-toggle" onclick="window.setLang(window.currentLang === 'en' ? 'th' : 'en')">ภาษาไทย</button>
+
+  <script src="translations.js"></script>
+  <script src="main.js"></script>
+  <script>
+    const WORKER_URL = 'https://crimson-boat-c04c.araki2546.workers.dev';
+    let ENDPOINT = '';
+    const endpointReady = (async () => {
+      try {
+        const r = await fetch(WORKER_URL + '/tunnel');
+        const d = await r.json();
+        ENDPOINT = (d.url || '').replace(/\/$/, '') + '/game/riddle';
+      } catch {}
+    })();
+
+    const RIDDLES = [
+      {
+        text: 'I have cities, but no houses live there. Mountains, but no trees. Water, but no fish. What am I?',
+        answer: ['map', 'a map'],
+        hint: 'Travelers carry me, yet I have never been anywhere.',
+        reveal: 'A map — the whole world, held in your hands.'
+      },
+      {
+        text: 'The more you take, the more you leave behind. What am I?',
+        answer: ['footsteps', 'steps', 'footprints', 'a footstep', 'footstep'],
+        hint: 'You make me without thinking, every single day.',
+        reveal: 'Footsteps — you carry yourself forward, and leave yourself behind.'
+      },
+      {
+        text: 'I speak without a mouth and hear without ears. I have no body, but I come alive with the wind. What am I?',
+        answer: ['echo', 'an echo'],
+        hint: 'Call out in an empty canyon and I will answer.',
+        reveal: 'An echo — your own voice, returned to you by the world.'
+      },
+      {
+        text: 'I am always in front of you, but can never be seen. What am I?',
+        answer: ['future', 'the future'],
+        hint: 'You walk toward me with every step you take.',
+        reveal: 'The future — always approaching, never arriving as you imagined.'
+      },
+      {
+        text: 'I can fly without wings. I can cry without eyes. Wherever I go, darkness follows. What am I?',
+        answer: ['cloud', 'a cloud'],
+        hint: 'Farmers watch for me. Poets write about me.',
+        reveal: 'A cloud — free above the world, carrying sorrow and rain.'
+      },
+      {
+        text: 'The more there is of me, the less you see. What am I?',
+        answer: ['dark', 'darkness', 'the dark'],
+        hint: 'I come when the candle goes out.',
+        reveal: 'Darkness — the more it fills a room, the less the room exists.'
+      },
+      {
+        text: 'I am not alive, but I grow. I have no lungs, but I need air. Water kills me. What am I?',
+        answer: ['fire', 'a fire'],
+        hint: 'Ancient people worshipped me, and feared me.',
+        reveal: 'Fire — alive without life, hungry without a mouth.'
+      },
+      {
+        text: 'I follow you all day long, but when night falls, I am gone. What am I?',
+        answer: ['shadow', 'a shadow', 'your shadow'],
+        hint: 'I am tallest at morning, shortest at noon.',
+        reveal: 'Your shadow — faithfully yours, yet made of nothing.'
+      },
+      {
+        text: 'I have an eye but cannot see. What am I?',
+        answer: ['needle', 'a needle'],
+        hint: 'I join things together with thread.',
+        reveal: 'A needle — it sees through fabric, yet is blind.'
+      },
+      {
+        text: 'What can you catch but never throw?',
+        answer: ['cold', 'a cold'],
+        hint: 'It visits in winter, uninvited.',
+        reveal: 'A cold — it catches you as easily as you catch it.'
+      },
+      {
+        text: 'Lighter than a feather, yet the strongest person cannot hold me for more than a minute. What am I?',
+        answer: ['breath', 'your breath', 'a breath'],
+        hint: 'You need me to speak. You need me to live.',
+        reveal: 'Breath — light as nothing, and worth everything.'
+      },
+      {
+        text: 'The person who makes me has no use for me. The person who buys me has no use for me. The person who uses me doesn\'t know it. What am I?',
+        answer: ['coffin', 'a coffin'],
+        hint: 'I am built for someone else\'s final journey.',
+        reveal: 'A coffin — made for the living, used by the dead.'
+      },
+      {
+        text: 'What is always coming but never arrives?',
+        answer: ['tomorrow'],
+        hint: 'You can name me, but you can never touch me.',
+        reveal: 'Tomorrow — it stays tomorrow until it becomes today, and then it\'s already gone.'
+      },
+      {
+        text: 'I have a head and a tail, but no body. What am I?',
+        answer: ['coin', 'a coin'],
+        hint: 'You carry many of me in your pocket.',
+        reveal: 'A coin — two faces, no middle, worth everything or nothing depending on where you stand.'
+      },
+      {
+        text: 'I have roots nobody sees. I am taller than trees. Up, up, up I go — and yet I never grow. What am I?',
+        answer: ['mountain', 'a mountain'],
+        hint: 'I have been here longer than any forest.',
+        reveal: 'A mountain — ancient, unmoved, and somehow still not finished being itself.'
+      },
+      {
+        text: 'I get wetter the more I dry. What am I?',
+        answer: ['towel', 'a towel'],
+        hint: 'You reach for me after bathing.',
+        reveal: 'A towel — the more useful it becomes, the more it carries.'
+      },
+      {
+        text: 'Lighter than a shadow, heavier than a mountain when carried. What am I?',
+        answer: ['secret', 'a secret'],
+        hint: 'Everyone has at least one of me.',
+        reveal: 'A secret — weightless to say, endless to keep.'
+      },
+      {
+        text: 'I am taken from the earth, wrapped in wood, and leave a mark wherever I touch. What am I?',
+        answer: ['pencil', 'a pencil'],
+        hint: 'Writers and children both reach for me.',
+        reveal: 'A pencil — pulled from the ground, wrapped in wood, drawn across the world.'
+      },
+      {
+        text: 'I have no voice, yet I speak to every heart. No feet, yet I travel everywhere. What am I?',
+        answer: ['music', 'song', 'a song', 'melody', 'a melody'],
+        hint: 'Close your eyes. I will find you.',
+        reveal: 'Music — voiceless, weightless, and somehow the thing most felt.'
+      },
+      {
+        text: 'The more you share me, the more of me remains. What am I?',
+        answer: ['knowledge', 'love', 'joy', 'happiness'],
+        hint: 'I am the only thing that grows when given away.',
+        reveal: 'Knowledge — the only thing that multiplies when divided.'
+      },
+    ];
+
+    const WRONG_OFFLINE = [
+      'Not quite. Try again.',
+      'She tilts her head. That\'s not it.',
+      'Wrong, but she\'s still listening.',
+      'She waits. Patient as starlight.',
+      'Close? Perhaps. But no.',
+    ];
+    const CORRECT_OFFLINE = [
+      'She smiles. Yes — exactly.',
+      'You got it. She nods once.',
+      'That\'s the one. Well done.',
+      'Yes. She looks quietly pleased.',
+    ];
+    const HINT_OPEN = [
+      'She considers, then speaks. ',
+      'One thread, then. ',
+      'Very well. Listen — ',
+    ];
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function animateWords(el, text, baseDelay = 0) {
+      const words = text.split(/\s+/);
+      el.innerHTML = words.map((w, i) =>
+        `<span class="w" style="animation-delay:${(baseDelay + i * 0.055).toFixed(2)}s">${escapeHtml(w)}</span>`
+      ).join(' ');
+    }
+
+    function showReaction(text, dim = false) {
+      const el = document.getElementById('reaction');
+      el.className = 'reaction' + (dim ? ' dim' : '');
+      animateWords(el, text);
+    }
+
+    let current = null;
+    let attempt = 0;
+    let done    = false;
+
+    function updatePips() {
+      const MAX = 5;
+      document.getElementById('pip-row').innerHTML =
+        Array.from({ length: MAX }, (_, i) =>
+          `<div class="pip${i < attempt ? ' wrong' : ''}"></div>`
+        ).join('');
+    }
+
+    function pickRiddle() {
+      let recent = [];
+      try { recent = JSON.parse(localStorage.getItem('jun_riddle_recent') || '[]'); } catch (_) {}
+      const pool = RIDDLES.filter(r => !recent.includes(r.text));
+      const src  = pool.length ? pool : RIDDLES;
+      const pick = src[Math.floor(Math.random() * src.length)];
+      try {
+        recent.push(pick.text);
+        if (recent.length > Math.floor(RIDDLES.length / 2)) recent.shift();
+        localStorage.setItem('jun_riddle_recent', JSON.stringify(recent));
+      } catch (_) {}
+      return pick;
+    }
+
+    function poseRiddle() {
+      current = pickRiddle();
+      attempt = 0;
+      done    = false;
+
+      document.getElementById('pose-btn').classList.add('hidden');
+      document.getElementById('riddle-box').classList.remove('hidden');
+      document.getElementById('pip-row').classList.remove('hidden');
+      document.getElementById('guess-area').classList.remove('hidden');
+      document.getElementById('hint-btn').classList.add('hidden');
+      document.getElementById('giveup-btn').classList.add('hidden');
+      document.getElementById('again-row').classList.add('hidden');
+      document.getElementById('guess-btn').disabled = false;
+      document.getElementById('reaction').textContent = '';
+      document.getElementById('guess-input').value = '';
+
+      updatePips();
+      animateWords(document.getElementById('riddle-box'), current.text);
+
+      const delay = current.text.split(/\s+/).length * 60 + 500;
+      setTimeout(() => document.getElementById('guess-input').focus(), delay);
+    }
+
+    function checkAnswer(guess) {
+      const norm = guess.trim().toLowerCase();
+      return current.answer.some(a => a.toLowerCase() === norm);
+    }
+
+    async function submitGuess() {
+      if (done) return;
+      const guessEl = document.getElementById('guess-input');
+      const guess   = guessEl.value.trim();
+      if (!guess) return;
+      await endpointReady;
+
+      const correct = checkAnswer(guess);
+      attempt++;
+      guessEl.value = '';
+      document.getElementById('guess-btn').disabled = true;
+
+      const reactionEl = document.getElementById('reaction');
+      reactionEl.className = 'reaction dim';
+      reactionEl.innerHTML = (window.t('riddles.thinking') || 'Junis is thinking') + '<span class="dots"></span>';
+
+      let reaction = '';
+      try {
+        const name = document.getElementById('name').value.trim();
+        const res  = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ riddle: current.text, guess, correct, attempt, name, lang: window.currentLang || 'en' }),
+          signal: AbortSignal.timeout(15000)
+        });
+        const data = await res.json();
+        if (data && data.ok && data.reaction) reaction = data.reaction;
+      } catch (_) {}
+
+      if (!reaction) {
+        reaction = correct
+          ? CORRECT_OFFLINE[Math.floor(Math.random() * CORRECT_OFFLINE.length)]
+          : WRONG_OFFLINE[Math.floor(Math.random() * WRONG_OFFLINE.length)];
+      }
+
+      updatePips();
+
+      if (correct) {
+        done = true;
+        document.getElementById('guess-area').classList.add('hidden');
+        document.getElementById('again-row').classList.remove('hidden');
+      } else {
+        document.getElementById('guess-btn').disabled = false;
+        if (attempt >= 2) document.getElementById('hint-btn').classList.remove('hidden');
+        if (attempt >= 4) document.getElementById('giveup-btn').classList.remove('hidden');
+      }
+
+      showReaction(reaction);
+    }
+
+    function showHint() {
+      const prefix = HINT_OPEN[Math.floor(Math.random() * HINT_OPEN.length)];
+      showReaction(prefix + current.hint);
+      document.getElementById('hint-btn').disabled = true;
+    }
+
+    function giveUp() {
+      done = true;
+      document.getElementById('guess-area').classList.add('hidden');
+      document.getElementById('again-row').classList.remove('hidden');
+      showReaction(current.reveal);
+    }
+
+    document.getElementById('pose-btn').addEventListener('click', poseRiddle);
+    document.getElementById('guess-btn').addEventListener('click', submitGuess);
+    document.getElementById('hint-btn').addEventListener('click', showHint);
+    document.getElementById('giveup-btn').addEventListener('click', giveUp);
+    document.getElementById('again-btn').addEventListener('click', poseRiddle);
+    document.getElementById('guess-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitGuess();
+    });
+
+    const nameEl = document.getElementById('name');
+    try { const saved = localStorage.getItem('jun_fortune_name'); if (saved) nameEl.value = saved; } catch (_) {}
+    nameEl.addEventListener('change', () => {
+      try { localStorage.setItem('jun_fortune_name', nameEl.value.trim()); } catch (_) {}
+    });
+  </script>
+</body>
+</html>

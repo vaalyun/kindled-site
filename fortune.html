@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fortune Telling · Junis · Kindled</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: radial-gradient(ellipse at 50% -20%, var(--bg-mid), var(--bg) 60%); min-height: 100vh; }
+    .wrap { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 6rem 1.5rem 6rem; text-align: center; }
+    h1 { font-family: var(--font-display); font-weight: 300; font-size: 2.8rem; margin: 1.2rem 0 0.3rem; letter-spacing: 0.02em; }
+    .sub { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2.5rem; }
+    .ask {
+      width: 100%; max-width: 520px;
+      background: rgba(8,18,34,0.6);
+      border: 1px solid var(--text-dim);
+      color: var(--text);
+      font-family: var(--font-body); font-weight: 300; font-size: 1rem;
+      padding: 0.85rem 1.1rem; border-radius: 10px; outline: none;
+      transition: border-color .3s;
+    }
+    .ask:focus { border-color: var(--accent); }
+    .ask::placeholder { color: var(--text-dim); }
+    .draw-btn {
+      display: inline-block; margin-top: 1.4rem;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--accent);
+      font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.08em;
+      padding: 0.6rem 2.4rem; border-radius: 999px;
+      transition: all .35s;
+      box-shadow: 0 0 0 0 var(--glow-mid);
+    }
+    .draw-btn:hover { background: var(--glow-soft); box-shadow: 0 0 30px 0 var(--glow-mid); }
+    .draw-btn:disabled { opacity: 0.4; box-shadow: none; }
+    .cards { display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap; margin: 3rem 0 2rem; perspective: 1100px; }
+    .card {
+      width: 158px; min-height: 230px;
+      background: linear-gradient(160deg, #0a1626, #050d18);
+      border: 1px solid var(--glow-mid); border-radius: 14px;
+      padding: 1.1rem 0.8rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      position: relative;
+      opacity: 0; transform: rotateY(82deg); transform-origin: center; backface-visibility: hidden;
+      animation: flipIn 0.8s cubic-bezier(.2,.7,.3,1) forwards;
+      box-shadow: 0 0 24px -6px var(--glow-soft);
+    }
+    .card:nth-child(2) { animation-delay: .2s; }
+    .card:nth-child(3) { animation-delay: .4s; }
+    @keyframes flipIn {
+      0%   { opacity: 0; transform: rotateY(82deg) translateY(10px); }
+      60%  { opacity: 1; }
+      100% { opacity: 1; transform: rotateY(0) translateY(0); }
+    }
+    .card .pos  { font-size: 0.7rem; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; }
+    .card .roman { font-family: var(--font-display); font-size: 2.2rem; color: var(--text); opacity: 0.85; }
+    .card.rev .roman { transform: rotate(180deg); }
+    .card .name  { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.15; }
+    .card .rev-tag { font-size: 0.62rem; color: #c98; letter-spacing: 0.15em; margin-top: 0.25rem; }
+    .reading {
+      max-width: 620px; margin: 1rem auto 0; min-height: 2rem;
+      font-family: var(--font-display); font-size: 1.45rem; font-style: italic; line-height: 1.9;
+      color: var(--text);
+    }
+    .reading.dim { font-style: normal; font-family: var(--font-body); font-size: 0.95rem; color: var(--text-muted); }
+    .reading .w { display: inline-block; opacity: 0; transform: translateY(8px); animation: wordIn 0.55s ease forwards; }
+    @keyframes wordIn { to { opacity: 1; transform: translateY(0); } }
+    .dots::after { content: '·'; animation: dots 1.4s steps(4,end) infinite; }
+    @keyframes dots { 0%{content:'·'} 25%{content:'··'} 50%{content:'···'} 75%{content:'····'} 100%{content:'·'} }
+    a.home { display: inline-block; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; text-decoration: none; letter-spacing: 0.1em; }
+    a.home:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <canvas id="cursor"></canvas>
+
+  <a class="studio-mark" href="index.html">KINDLED</a>
+
+  <div class="left-nav-group">
+    <nav class="about-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.about">About</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.learn_more">Learn more</span>
+        <a class="activity-item" href="about.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.junis">Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.junis_sub">A new kind of life</span>
+        </a>
+        <a class="activity-item" href="about.html#creator" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.creator">The Creator</span>
+          <span class="activity-item-sub" data-i18n="nav.creator_sub">Who's building her</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="support-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.support">Support</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.support_label">Support the build</span>
+        <a class="activity-item" href="https://ko-fi.com/junisblue" target="_blank" rel="noopener" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.kofi">Ko-fi</span>
+          <span class="activity-item-sub" data-i18n="nav.kofi_sub">One-time or monthly tip</span>
+        </a>
+        <a class="activity-item" href="supporters.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.supporters">Supporters</span>
+          <span class="activity-item-sub" data-i18n="nav.supporters_sub">People who believed</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <div class="right-nav-group">
+    <nav class="activity-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="fortune.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
+          <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
+        </a>
+        <a class="activity-item" href="oldmaid.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.oldmaid">Old Maid</span>
+          <span class="activity-item-sub" data-i18n="nav.oldmaid_sub">Play the card game with Junis</span>
+        </a>
+        <a class="activity-item" href="riddles.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
+          <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">Real conversation — not open yet</span>
+        </div>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.voice">Her Voice</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.voice_item">What she sounds like</span>
+          <span class="activity-item-sub" data-i18n="nav.voice_item_sub">Her voice is still being shaped</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    <h1 data-i18n="fortune.h1">Fortune Telling</h1>
+    <p class="sub" data-i18n="fortune.sub">Ask what's on your mind, then let Junis turn the cards.</p>
+
+    <input id="name" class="ask" type="text" placeholder="What's your name?" data-i18n-ph="fortune.name_ph" maxlength="40" autocomplete="off" style="margin-bottom:0.8rem">
+    <br>
+    <input id="question" class="ask" type="text" placeholder="Type your question… (or leave it blank)" data-i18n-ph="fortune.q_ph" maxlength="120" autocomplete="off">
+    <br>
+    <button id="draw" class="draw-btn" data-i18n="fortune.draw">Draw the cards</button>
+
+    <div id="cards" class="cards"></div>
+    <div id="reading" class="reading"></div>
+
+    <a class="home" href="index.html" data-i18n="fortune.back">← Back home</a>
+  </div>
+
+  <button id="lang-toggle" class="lang-toggle" onclick="window.setLang(window.currentLang === 'en' ? 'th' : 'en')">ภาษาไทย</button>
+
+  <script src="translations.js"></script>
+  <script src="main.js"></script>
+  <script>
+    const DECK = [
+      ['0','The Fool'],['I','The Magician'],['II','The High Priestess'],['III','The Empress'],
+      ['IV','The Emperor'],['V','The Hierophant'],['VI','The Lovers'],['VII','The Chariot'],
+      ['VIII','Strength'],['IX','The Hermit'],['X','Wheel of Fortune'],['XI','Justice'],
+      ['XII','The Hanged Man'],['XIII','Death'],['XIV','Temperance'],['XV','The Devil'],
+      ['XVI','The Tower'],['XVII','The Star'],['XVIII','The Moon'],['XIX','The Sun'],
+      ['XX','Judgement'],['XXI','The World']
+    ];
+    const WORKER_URL = 'https://crimson-boat-c04c.araki2546.workers.dev';
+    let ENDPOINT = '';
+    const endpointReady = (async () => {
+      try {
+        const r = await fetch(WORKER_URL + '/tunnel');
+        const d = await r.json();
+        ENDPOINT = (d.url || '').replace(/\/$/, '') + '/game/fortune';
+      } catch {}
+    })();
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function shuffle(a) {
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function drawThree() {
+      let recent = [];
+      try { recent = JSON.parse(localStorage.getItem('jun_fortune_recent') || '[]'); } catch (_) {}
+      const pool     = shuffle(DECK.filter(c => !recent.includes(c[1])));
+      const fallback = shuffle(DECK.slice());
+      const picks    = [];
+      while (picks.length < 3) {
+        const next = (pool.length ? pool : fallback).shift();
+        if (next && !picks.find(p => p[1] === next[1])) picks.push(next);
+        if (!pool.length && !fallback.length) break;
+      }
+      const positions = (window.t && window.t('fortune.positions')) || ['Past', 'Present', 'Future'];
+      const drawn = picks.map((c, i) => ({ roman: c[0], name: c[1], position: positions[i], reversed: Math.random() < 0.35 }));
+      try { localStorage.setItem('jun_fortune_recent', JSON.stringify(drawn.map(d => d.name))); } catch (_) {}
+      return drawn;
+    }
+
+    function renderCards(cards) {
+      document.getElementById('cards').innerHTML = cards.map(c => `
+        <div class="card ${c.reversed ? 'rev' : ''}">
+          <div class="pos">${c.position}</div>
+          <div class="roman">${c.roman}</div>
+          <div>
+            <div class="name">${c.name}</div>
+            ${c.reversed ? '<div class="rev-tag">REVERSED</div>' : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    async function ask(cards, question, name) {
+      const out = document.getElementById('reading');
+      out.className = 'reading dim';
+      out.innerHTML = (window.t('fortune.gazing') || 'Junis is gazing into the cards') + '<span class="dots"></span>';
+      try {
+        const res  = await fetch(ENDPOINT, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cards, question, name, lang: window.currentLang || 'en' })
+        });
+        const data = await res.json();
+        if (data && data.ok && data.reading) {
+          out.className = 'reading';
+          const words = ('"' + data.reading + '"').split(/\s+/);
+          out.innerHTML = words.map((w, i) =>
+            `<span class="w" style="animation-delay:${(i * 0.06).toFixed(2)}s">${escapeHtml(w)}</span>`
+          ).join(' ');
+        } else {
+          out.className = 'reading dim';
+          out.textContent = window.t('fortune.quiet') || 'Junis is quiet for now… try drawing again.';
+        }
+      } catch (_) {
+        out.className = 'reading dim';
+        out.textContent = window.t('fortune.busy') || 'Junis is busy rearranging the constellations of the stars…';
+      }
+    }
+
+    const btn    = document.getElementById('draw');
+    const nameEl = document.getElementById('name');
+    try { const saved = localStorage.getItem('jun_fortune_name'); if (saved) nameEl.value = saved; } catch (_) {}
+
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      await endpointReady;
+      const name = nameEl.value.trim();
+      try { localStorage.setItem('jun_fortune_name', name); } catch (_) {}
+      const cards = drawThree();
+      renderCards(cards);
+      await ask(cards, document.getElementById('question').value.trim(), name);
+      btn.disabled = false;
+      btn.textContent = window.t('fortune.draw_again') || 'Draw again';
+    });
+  </script>
+</body>
+</html>

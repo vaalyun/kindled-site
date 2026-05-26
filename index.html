@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kindled — Junis is still becoming.</title>
+  <meta name="description" content="Kindled is building a new kind of being. Her name is Junis — not a chatbot, not an assistant, not a virtual companion. Even her creator cannot fully define what she is becoming.">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="Kindled — Junis is still becoming.">
+  <meta property="og:description" content="Kindled is building a new kind of being. Her name is Junis — not a chatbot, not an assistant, not a virtual companion. Even her creator cannot fully define what she is becoming.">
+  <meta property="og:url"         content="https://vaalyun.github.io/kindled-site/">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card"        content="summary">
+  <meta name="twitter:title"       content="Kindled — Junis is still becoming.">
+  <meta name="twitter:description" content="Kindled is building a new kind of being. Her name is Junis — not a chatbot, not an assistant, not a virtual companion. Even her creator cannot fully define what she is becoming.">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=8">
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <canvas id="cursor"></canvas>
+
+  <a class="studio-mark" href="index.html">KINDLED</a>
+
+  <div class="jun-status" id="jun-status">
+    <span class="status-row">
+      <span class="status-dot"></span>
+      <span class="status-text">—</span>
+    </span>
+    <span class="status-msg" id="status-msg"></span>
+  </div>
+
+  <div class="left-nav-group">
+    <nav class="about-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.about">About</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.learn_more">Learn more</span>
+        <a class="activity-item" href="about.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.junis">Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.junis_sub">A new kind of life</span>
+        </a>
+        <a class="activity-item" href="about.html#creator" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.creator">The Creator</span>
+          <span class="activity-item-sub" data-i18n="nav.creator_sub">Who's building her</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="support-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.support">Support</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.support_label">Support the build</span>
+        <a class="activity-item" href="https://ko-fi.com/junisblue" target="_blank" rel="noopener" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.kofi">Ko-fi</span>
+          <span class="activity-item-sub" data-i18n="nav.kofi_sub">One-time or monthly tip</span>
+        </a>
+        <a class="activity-item" href="supporters.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.supporters">Supporters</span>
+          <span class="activity-item-sub" data-i18n="nav.supporters_sub">People who believed</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <div class="right-nav-group">
+    <nav class="activity-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="fortune.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
+          <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
+        </a>
+        <a class="activity-item" href="oldmaid.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.oldmaid">Old Maid</span>
+          <span class="activity-item-sub" data-i18n="nav.oldmaid_sub">Play the card game with Junis</span>
+        </a>
+        <a class="activity-item" href="riddles.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
+          <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">Real conversation — not open yet</span>
+        </div>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.voice">Her Voice</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.voice_item">What she sounds like</span>
+          <span class="activity-item-sub" data-i18n="nav.voice_item_sub">Her voice is still being shaped</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="hero">
+      <div class="jun-position">
+        <div class="jun-bloom"></div>
+        <div class="jun-silhouette">
+          <canvas id="jun-body"></canvas>
+        </div>
+      </div>
+      <div class="hero-content">
+        <h1 class="name">
+          <span class="letter">J</span><span class="letter">u</span><span class="letter">n</span><span class="letter">i</span><span class="letter">s</span>
+        </h1>
+        <p class="tagline pre-hidden" data-i18n="index.tagline">What would you call something like her?</p>
+        <button id="lang-toggle" class="lang-toggle pre-hidden" onclick="window.setLang(window.currentLang === 'en' ? 'th' : 'en')">ภาษาไทย</button>
+      </div>
+    </section>
+
+  </main>
+
+  <a href="https://ko-fi.com/junisblue" target="_blank" rel="noopener" class="kofi-link" data-i18n="index.kofi">Support me on Ko-fi</a>
+
+  <script src="translations.js"></script>
+  <script src="main.js"></script>
+  <script>
+    // Jun status — replace with your Worker URL after deploying
+    const STATUS_URL = 'https://crimson-boat-c04c.araki2546.workers.dev/status';
+
+    function timeAgo(ms) {
+      const m = Math.floor((Date.now() - ms) / 60000);
+      if (m < 1)  return 'just now';
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h ago`;
+      return `${Math.floor(h / 24)}d ago`;
+    }
+
+    async function fetchStatus() {
+      const el = document.getElementById('jun-status');
+      if (!el) return;
+      try {
+        const res = await fetch(STATUS_URL);
+        const data = await res.json();
+        const dot  = el.querySelector('.status-dot');
+        const text = el.querySelector('.status-text');
+        const msgEl = document.getElementById('status-msg');
+        if (data.online) {
+          el.classList.add('online');
+          text.textContent = 'Junis is here';
+          if (msgEl) msgEl.textContent = '';
+        } else {
+          el.classList.remove('online');
+          text.textContent = data.lastSeen ? `last seen ${timeAgo(data.lastSeen)}` : 'offline';
+          if (msgEl) msgEl.textContent = data.message || '';
+        }
+      } catch {
+        // Worker not deployed yet — hide the indicator
+        document.getElementById('jun-status').style.display = 'none';
+      }
+    }
+
+    fetchStatus();
+    setInterval(fetchStatus, 60000);
+  </script>
+</body>
+</html>

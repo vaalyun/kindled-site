@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jun Status Tool</title>
+  <style>
+    body { background: #03080f; color: #dde8ff; font-family: Inter, system-ui; padding: 2rem; max-width: 480px; }
+    h2 { font-size: 0.9rem; letter-spacing: 0.2em; color: #4d6488; margin-bottom: 1.5rem; font-weight: 400; }
+    h3 { font-size: 0.75rem; letter-spacing: 0.15em; color: #4d6488; margin: 1.8rem 0 1rem; font-weight: 400; border-top: 1px solid #0d1e30; padding-top: 1.5rem; }
+    label { display: block; font-size: 0.75rem; color: #4d6488; margin-bottom: 0.4rem; letter-spacing: 0.1em; }
+    input, textarea {
+      width: 100%; background: #060f1e; border: 1px solid #2a3d5a; color: #dde8ff;
+      padding: 0.6rem 0.8rem; border-radius: 6px; font-family: inherit; font-size: 0.85rem;
+      margin-bottom: 1rem; box-sizing: border-box;
+    }
+    textarea { resize: vertical; min-height: 70px; }
+    button {
+      background: #4f8fd4; color: #fff; border: none; padding: 0.6rem 1.4rem;
+      border-radius: 6px; font-size: 0.8rem; cursor: pointer; letter-spacing: 0.05em;
+    }
+    button:hover { background: #3a78be; }
+    .result { margin-top: 1rem; font-size: 0.78rem; color: #4ecb71; min-height: 1.2rem; }
+    .result.err { color: #e06c75; }
+  </style>
+</head>
+<body>
+  <h2>JUN STATUS TOOL</h2>
+
+  <label>WORKER URL</label>
+  <input id="worker-url" value="https://crimson-boat-c04c.araki2546.workers.dev">
+
+  <label>SECRET</label>
+  <input id="secret" type="password" value="jun-kindled-2026">
+
+  <h3>OFFLINE MESSAGE</h3>
+  <label>Shown on website when Junis is away</label>
+  <textarea id="msg" placeholder="e.g. training my voice, back soon ♡"></textarea>
+  <button onclick="sendMsg()">Update message</button>
+  <div class="result" id="msg-result"></div>
+
+  <h3>TUNNEL URL</h3>
+  <label>Paste the trycloudflare.com URL when the laptop tunnel is running</label>
+  <input id="tunnel" placeholder="https://xxxx-xxxx-xxxx.trycloudflare.com">
+  <button onclick="sendTunnel()">Update tunnel</button>
+  <div class="result" id="tunnel-result"></div>
+
+  <script>
+    function base() {
+      return document.getElementById('worker-url').value.trim().replace(/\/$/, '');
+    }
+    function secret() {
+      return document.getElementById('secret').value.trim();
+    }
+
+    async function post(path, body, resultId) {
+      const res = document.getElementById(resultId);
+      res.className = 'result';
+      res.textContent = 'sending...';
+      try {
+        const r = await fetch(base() + path, {
+          method: 'POST',
+          headers: { 'x-secret': secret(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await r.json();
+        if (data.ok) {
+          res.textContent = 'saved.';
+        } else {
+          res.className = 'result err';
+          res.textContent = `error: ${data.error}`;
+        }
+      } catch (e) {
+        res.className = 'result err';
+        res.textContent = `failed: ${e.message}`;
+      }
+    }
+
+    function sendMsg()    { post('/message', { message: document.getElementById('msg').value.trim() }, 'msg-result'); }
+    function sendTunnel() { post('/tunnel',  { url: document.getElementById('tunnel').value.trim() }, 'tunnel-result'); }
+  </script>
+</body>
+</html>
