@@ -24,6 +24,14 @@
   </style>
 </head>
 <body>
+  <div id="gate" style="display:flex;flex-direction:column;gap:1rem;max-width:280px;margin-top:4rem;">
+    <label style="font-size:0.75rem;letter-spacing:0.1em;color:#4d6488;">ACCESS PASSWORD</label>
+    <input id="gate-pw" type="password" placeholder="password" onkeydown="if(event.key==='Enter')unlock()">
+    <button onclick="unlock()">Unlock</button>
+    <div id="gate-err" style="font-size:0.75rem;color:#e06c75;min-height:1rem;"></div>
+  </div>
+
+  <div id="app" style="display:none;">
   <h2>JUN STATUS TOOL</h2>
 
   <label>WORKER URL</label>
@@ -77,6 +85,17 @@
 
     function sendMsg()    { post('/message', { message: document.getElementById('msg').value.trim() }, 'msg-result'); }
     function sendTunnel() { post('/tunnel',  { url: document.getElementById('tunnel').value.trim() }, 'tunnel-result'); }
+
+    function unlock() {
+      const pw = document.getElementById('gate-pw').value;
+      if (pw === 'jun-kindled-2026') {
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+      } else {
+        document.getElementById('gate-err').textContent = 'wrong password.';
+      }
+    }
   </script>
+  </div>
 </body>
 </html>
