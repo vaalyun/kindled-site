@@ -632,7 +632,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     ambientGain = ambientCtx.createGain();
     ambientGain.gain.value = 0;
     ambientGain.connect(ambientCtx.destination);
-    const res = await fetch('/ambient.mp3');
+    const res = await fetch('ambient.mp3');
     const raw = await res.arrayBuffer();
     ambientBuffer = await ambientCtx.decodeAudioData(raw);
     const pts = detectLoopPoints(ambientBuffer);
@@ -716,7 +716,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
   async function loadClick() {
     clickCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const res = await fetch('/click.wav');
+    const res = await fetch('click.wav');
     const raw = await res.arrayBuffer();
     clickBuffer = await clickCtx.decodeAudioData(raw);
   }
