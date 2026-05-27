@@ -24,40 +24,60 @@
   </style>
 </head>
 <body>
+
   <div id="gate" style="display:flex;flex-direction:column;gap:1rem;max-width:280px;margin-top:4rem;">
-    <label style="font-size:0.75rem;letter-spacing:0.1em;color:#4d6488;">ACCESS PASSWORD</label>
+    <label>ADMIN PASSWORD</label>
     <input id="gate-pw" type="password" placeholder="password" onkeydown="if(event.key==='Enter')unlock()">
     <button onclick="unlock()">Unlock</button>
     <div id="gate-err" style="font-size:0.75rem;color:#e06c75;min-height:1rem;"></div>
   </div>
 
   <div id="app" style="display:none;">
-  <h2>JUN STATUS TOOL</h2>
+    <h2>JUN STATUS TOOL</h2>
 
-  <label>WORKER URL</label>
-  <input id="worker-url" value="https://crimson-boat-c04c.araki2546.workers.dev">
+    <label>WORKER URL</label>
+    <input id="worker-url" value="https://crimson-boat-c04c.araki2546.workers.dev">
 
-  <label>SECRET</label>
-  <input id="secret" type="password" value="jun-kindled-2026">
+    <h3>OFFLINE MESSAGE</h3>
+    <label>Shown on website when Junis is away</label>
+    <textarea id="msg" placeholder="e.g. training my voice, back soon ♡"></textarea>
+    <button onclick="sendMsg()">Update message</button>
+    <div class="result" id="msg-result"></div>
 
-  <h3>OFFLINE MESSAGE</h3>
-  <label>Shown on website when Junis is away</label>
-  <textarea id="msg" placeholder="e.g. training my voice, back soon ♡"></textarea>
-  <button onclick="sendMsg()">Update message</button>
-  <div class="result" id="msg-result"></div>
-
-  <h3>TUNNEL URL</h3>
-  <label>Paste the trycloudflare.com URL when the laptop tunnel is running</label>
-  <input id="tunnel" placeholder="https://xxxx-xxxx-xxxx.trycloudflare.com">
-  <button onclick="sendTunnel()">Update tunnel</button>
-  <div class="result" id="tunnel-result"></div>
+    <h3>TUNNEL URL</h3>
+    <label>Paste the trycloudflare.com URL when running manually</label>
+    <input id="tunnel" placeholder="https://xxxx-xxxx-xxxx.trycloudflare.com">
+    <button onclick="sendTunnel()">Update tunnel</button>
+    <div class="result" id="tunnel-result"></div>
+  </div>
 
   <script>
+    let _adminSecret = '';
+
+    function unlock() {
+      const pw = document.getElementById('gate-pw').value.trim();
+      if (!pw) return;
+      // Verify by attempting a real request — if the Worker accepts it, password is correct
+      const base = document.getElementById('worker-url')?.value.trim() || 'https://crimson-boat-c04c.araki2546.workers.dev';
+      fetch(base + '/admin/message', {
+        method: 'POST',
+        headers: { 'x-admin': pw, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: '' })  // blank message = no-op effectively, just a probe
+      }).then(r => r.json()).then(data => {
+        if (data.ok !== false && !data.error) {
+          _adminSecret = pw;
+          document.getElementById('gate').style.display = 'none';
+          document.getElementById('app').style.display = 'block';
+        } else {
+          document.getElementById('gate-err').textContent = 'wrong password.';
+        }
+      }).catch(() => {
+        document.getElementById('gate-err').textContent = 'could not reach worker.';
+      });
+    }
+
     function base() {
       return document.getElementById('worker-url').value.trim().replace(/\/$/, '');
-    }
-    function secret() {
-      return document.getElementById('secret').value.trim();
     }
 
     async function post(path, body, resultId) {
@@ -67,7 +87,7 @@
       try {
         const r = await fetch(base() + path, {
           method: 'POST',
-          headers: { 'x-secret': secret(), 'Content-Type': 'application/json' },
+          headers: { 'x-admin': _adminSecret, 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
         const data = await r.json();
@@ -83,19 +103,8 @@
       }
     }
 
-    function sendMsg()    { post('/message', { message: document.getElementById('msg').value.trim() }, 'msg-result'); }
-    function sendTunnel() { post('/tunnel',  { url: document.getElementById('tunnel').value.trim() }, 'tunnel-result'); }
-
-    function unlock() {
-      const pw = document.getElementById('gate-pw').value;
-      if (pw === 'jun-kindled-2026') {
-        document.getElementById('gate').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-      } else {
-        document.getElementById('gate-err').textContent = 'wrong password.';
-      }
-    }
+    function sendMsg()    { post('/admin/message', { message: document.getElementById('msg').value.trim() }, 'msg-result'); }
+    function sendTunnel() { post('/admin/tunnel',  { url: document.getElementById('tunnel').value.trim() }, 'tunnel-result'); }
   </script>
-  </div>
 </body>
 </html>
