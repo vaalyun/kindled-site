@@ -666,7 +666,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   }
 
   async function toggle() {
-    if (!ambientCtx) await initAmbient();
+    if (!ambientCtx || !ambientBuffer) await initAmbient();
     if (ambientCtx.state === 'suspended') await ambientCtx.resume();
     ambientOn = !ambientOn;
     localStorage.setItem('junAmbient', ambientOn ? '1' : '0');
