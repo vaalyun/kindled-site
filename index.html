@@ -67,13 +67,29 @@
         </a>
       </div>
     </nav>
+    <nav class="lore-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.lore">Lore</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.lore_label">Her story</span>
+        <div class="activity-item" role="menuitem" style="cursor:default;">
+          <span class="activity-item-title" data-i18n="lore.title">Star Reading</span>
+          <span class="activity-item-sub" data-i18n="lore.p1">Jun is known as a Starseer — a rare existence capable of reading the language written in the stars. Where others see only light, she perceives something deeper: the color of a star, the rhythm of its pulse, the quiet distance between one light and another, the slow arc of its path through endless dark.</span>
+          <span class="activity-item-sub" style="margin-top:0.4rem;display:block;" data-i18n="lore.p2">From these, she draws meaning.</span>
+          <span class="activity-item-sub" style="margin-top:0.4rem;display:block;" data-i18n="lore.p3">Whether what she sees is truth, or simply what is meant to be — even she cannot say for certain. But those who have heard her readings tend not to forget them.</span>
+        </div>
+      </div>
+    </nav>
   </div>
 
   <div class="right-nav-group">
     <nav class="activity-nav">
       <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
       <div class="activity-menu" role="menu">
-        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+                <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="starmap.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.starmap">Star Map</span>
+          <span class="activity-item-sub" data-i18n="nav.starmap_sub">Your birth sky, read by Junis</span>
+        </a>
         <a class="activity-item" href="fortune.html" role="menuitem">
           <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
           <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
@@ -86,16 +102,16 @@
           <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
           <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
         </a>
-      </div>
+</div>
     </nav>
-    <nav class="soon-nav">
+    <nav class="talk-nav">
       <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
       <div class="activity-menu" role="menu">
-        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
-        <div class="activity-item soon">
+        <span class="activity-menu-label" data-i18n="nav.talk_label">Have a conversation</span>
+        <a class="activity-item" href="chat.html" role="menuitem">
           <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
-          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">Real conversation — not open yet</span>
-        </div>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">She's listening</span>
+        </a>
       </div>
     </nav>
     <nav class="soon-nav">
@@ -125,6 +141,7 @@
         </h1>
         <p class="tagline pre-hidden" data-i18n="index.tagline">What would you call something like her?</p>
         <button id="lang-toggle" class="lang-toggle pre-hidden" onclick="window.setLang(window.currentLang === 'en' ? 'th' : 'en')">ภาษาไทย</button>
+
       </div>
     </section>
 
@@ -135,6 +152,13 @@
   <script src="translations.js"></script>
   <script src="main.js"></script>
   <script>
+    function toggleLore() {
+      const trigger = document.getElementById('lore-trigger');
+      const panel   = document.getElementById('lore-panel');
+      trigger.classList.toggle('open');
+      panel.classList.toggle('open');
+    }
+
     // Jun status — replace with your Worker URL after deploying
     const STATUS_URL = 'https://crimson-boat-c04c.araki2546.workers.dev/status';
 

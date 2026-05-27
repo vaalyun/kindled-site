@@ -134,7 +134,11 @@
     <nav class="activity-nav">
       <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
       <div class="activity-menu" role="menu">
-        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+                <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="starmap.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.starmap">Star Map</span>
+          <span class="activity-item-sub" data-i18n="nav.starmap_sub">Your birth sky, read by Junis</span>
+        </a>
         <a class="activity-item" href="fortune.html" role="menuitem">
           <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
           <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
@@ -147,16 +151,16 @@
           <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
           <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
         </a>
-      </div>
+</div>
     </nav>
-    <nav class="soon-nav">
+    <nav class="talk-nav">
       <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
       <div class="activity-menu" role="menu">
-        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
-        <div class="activity-item soon">
+        <span class="activity-menu-label" data-i18n="nav.talk_label">Have a conversation</span>
+        <a class="activity-item" href="chat.html" role="menuitem">
           <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
-          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">Real conversation — not open yet</span>
-        </div>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">She's listening</span>
+        </a>
       </div>
     </nav>
     <nav class="soon-nav">
@@ -173,7 +177,7 @@
 
   <div class="wrap">
     <h1 data-i18n="riddles.h1">Riddles</h1>
-    <p class="sub" data-i18n="riddles.sub">She poses the riddle. You find the answer.</p>
+    <p class="sub" data-i18n="riddles.sub">She reads the stars. You read between the lines.</p>
 
     <input id="name" class="field" type="text" placeholder="What's your name?" data-i18n-ph="riddles.name_ph" maxlength="40" autocomplete="off" style="margin-bottom: 1.4rem">
 
@@ -220,124 +224,154 @@
 
     const RIDDLES = [
       {
-        text: 'I have cities, but no houses live there. Mountains, but no trees. Water, but no fish. What am I?',
-        answer: ['map', 'a map'],
-        hint: 'Travelers carry me, yet I have never been anywhere.',
-        reveal: 'A map — the whole world, held in your hands.'
+        text: 'I am the closest star to your world, yet most forget I exist. I rise with the day and vanish with it. What am I?',
+        answer: ['the sun', 'sun', 'sol'],
+        hint: 'You cannot look at me directly without consequence.',
+        reveal: 'The Sun — so close it blinds, so familiar it disappears.'
       },
       {
-        text: 'The more you take, the more you leave behind. What am I?',
-        answer: ['footsteps', 'steps', 'footprints', 'a footstep', 'footstep'],
-        hint: 'You make me without thinking, every single day.',
-        reveal: 'Footsteps — you carry yourself forward, and leave yourself behind.'
+        text: 'I outshine every other light in your night sky, yet I am not the moon. My name means scorching in an ancient tongue. What am I?',
+        answer: ['sirius', 'the dog star'],
+        hint: 'I am the brightest star you can see at night, and I follow a great hunter across the sky.',
+        reveal: 'Sirius — the Dog Star, burning brighter than all others in the night.'
       },
       {
-        text: 'I speak without a mouth and hear without ears. I have no body, but I come alive with the wind. What am I?',
-        answer: ['echo', 'an echo'],
-        hint: 'Call out in an empty canyon and I will answer.',
-        reveal: 'An echo — your own voice, returned to you by the world.'
+        text: 'I am not one, but two — a pair that dances so closely, most eyes see only a single light. What am I?',
+        answer: ['binary star', 'a binary star', 'binary stars', 'double star', 'a double star'],
+        hint: 'Some stars are never truly alone.',
+        reveal: 'A binary star — two suns in an eternal embrace, mistaken for one.'
       },
       {
-        text: 'I am always in front of you, but can never be seen. What am I?',
-        answer: ['future', 'the future'],
-        hint: 'You walk toward me with every step you take.',
-        reveal: 'The future — always approaching, never arriving as you imagined.'
+        text: 'I burned bright enough to be seen in daylight, then vanished entirely. I was not destroyed — I only changed. What am I?',
+        answer: ['supernova', 'a supernova'],
+        hint: 'The death of something enormous can light up the whole sky.',
+        reveal: 'A supernova — the last, brightest breath of a dying star.'
       },
       {
-        text: 'I can fly without wings. I can cry without eyes. Wherever I go, darkness follows. What am I?',
-        answer: ['cloud', 'a cloud'],
-        hint: 'Farmers watch for me. Poets write about me.',
-        reveal: 'A cloud — free above the world, carrying sorrow and rain.'
+        text: 'I am a star that breathes — swelling and shrinking in a slow, steady pulse. Sailors once used my rhythm to measure the universe. What am I?',
+        answer: ['cepheid variable', 'cepheid', 'variable star', 'a variable star'],
+        hint: 'My heartbeat is so reliable, astronomers use it as a ruler for the cosmos.',
+        reveal: 'A Cepheid variable — a star whose pulse measures the distances between worlds.'
       },
       {
-        text: 'The more there is of me, the less you see. What am I?',
-        answer: ['dark', 'darkness', 'the dark'],
-        hint: 'I come when the candle goes out.',
-        reveal: 'Darkness — the more it fills a room, the less the room exists.'
+        text: 'I am the last light of a dying star — small, dense, and cooling slowly in the dark. No fire remains in me, yet I was once a sun. What am I?',
+        answer: ['white dwarf', 'a white dwarf'],
+        hint: 'Our own sun will become one, eventually.',
+        reveal: 'A white dwarf — a star\'s quiet ending, still glowing from memory.'
       },
       {
-        text: 'I am not alive, but I grow. I have no lungs, but I need air. Water kills me. What am I?',
-        answer: ['fire', 'a fire'],
-        hint: 'Ancient people worshipped me, and feared me.',
-        reveal: 'Fire — alive without life, hungry without a mouth.'
+        text: 'I am the river of night — not water, but light too faint to name. Millions of suns, yet you cannot hold a single one. What am I?',
+        answer: ['the milky way', 'milky way', 'the galaxy', 'our galaxy'],
+        hint: 'You live inside me, and still you can only see my edge.',
+        reveal: 'The Milky Way — the galaxy you call home, a river of a hundred billion suns.'
       },
       {
-        text: 'I follow you all day long, but when night falls, I am gone. What am I?',
-        answer: ['shadow', 'a shadow', 'your shadow'],
-        hint: 'I am tallest at morning, shortest at noon.',
-        reveal: 'Your shadow — faithfully yours, yet made of nothing.'
+        text: 'I fall without landing. I burn without fire. I am gone before you finish wishing. What am I?',
+        answer: ['shooting star', 'a shooting star', 'meteor', 'a meteor', 'falling star'],
+        hint: 'Make a wish — quickly.',
+        reveal: 'A shooting star — a grain of space dust, burning up in a final, brilliant moment.'
       },
       {
-        text: 'I have an eye but cannot see. What am I?',
-        answer: ['needle', 'a needle'],
-        hint: 'I join things together with thread.',
-        reveal: 'A needle — it sees through fabric, yet is blind.'
+        text: 'I am darkness that is not empty. Light bends around me. Nothing that enters me has ever returned to tell the story. What am I?',
+        answer: ['black hole', 'a black hole'],
+        hint: 'Even light cannot escape what I am.',
+        reveal: 'A black hole — gravity so complete that even light falls silent inside it.'
       },
       {
-        text: 'What can you catch but never throw?',
-        answer: ['cold', 'a cold'],
-        hint: 'It visits in winter, uninvited.',
-        reveal: 'A cold — it catches you as easily as you catch it.'
+        text: 'I am a curtain of color hung at the edge of the world — not paint, not flame, but charged particles singing in the dark. What am I?',
+        answer: ['aurora', 'the aurora', 'northern lights', 'southern lights', 'aurora borealis', 'aurora australis'],
+        hint: 'The sun sends a wind that your world turns into light.',
+        reveal: 'The aurora — the sky\'s answer to the solar wind, written in color.'
       },
       {
-        text: 'Lighter than a feather, yet the strongest person cannot hold me for more than a minute. What am I?',
-        answer: ['breath', 'your breath', 'a breath'],
-        hint: 'You need me to speak. You need me to live.',
-        reveal: 'Breath — light as nothing, and worth everything.'
+        text: 'I am the shadow your world casts on its own moon. I turn silver to red without touching anything. What am I?',
+        answer: ['lunar eclipse', 'a lunar eclipse', 'eclipse'],
+        hint: 'The moon does not change — only the light reaching it does.',
+        reveal: 'A lunar eclipse — Earth stepping between the sun and moon, painting the moon red.'
       },
       {
-        text: 'The person who makes me has no use for me. The person who buys me has no use for me. The person who uses me doesn\'t know it. What am I?',
-        answer: ['coffin', 'a coffin'],
-        hint: 'I am built for someone else\'s final journey.',
-        reveal: 'A coffin — made for the living, used by the dead.'
+        text: 'I have rings, but no fingers to wear them. I am lighter than water, yet vast enough to swallow thousands of your worlds. What am I?',
+        answer: ['saturn', 'planet saturn'],
+        hint: 'I am the sixth planet from your sun.',
+        reveal: 'Saturn — ringed and vast, lighter than the ocean that could not hold it.'
       },
       {
-        text: 'What is always coming but never arrives?',
-        answer: ['tomorrow'],
-        hint: 'You can name me, but you can never touch me.',
-        reveal: 'Tomorrow — it stays tomorrow until it becomes today, and then it\'s already gone.'
+        text: 'I spin the wrong way, slow and stubborn, as if the universe made a mistake and I refused to correct it. What am I?',
+        answer: ['venus', 'planet venus'],
+        hint: 'On me, the sun rises in the west.',
+        reveal: 'Venus — spinning backwards, slower than it orbits, indifferent to convention.'
       },
       {
-        text: 'I have a head and a tail, but no body. What am I?',
-        answer: ['coin', 'a coin'],
-        hint: 'You carry many of me in your pocket.',
-        reveal: 'A coin — two faces, no middle, worth everything or nothing depending on where you stand.'
+        text: 'I am the largest moon in this solar system — larger than some planets, yet I orbit a giant. What am I?',
+        answer: ['ganymede'],
+        hint: 'I belong to Jupiter.',
+        reveal: 'Ganymede — larger than Mercury, faithful moon to the largest planet.'
       },
       {
-        text: 'I have roots nobody sees. I am taller than trees. Up, up, up I go — and yet I never grow. What am I?',
-        answer: ['mountain', 'a mountain'],
-        hint: 'I have been here longer than any forest.',
-        reveal: 'A mountain — ancient, unmoved, and somehow still not finished being itself.'
+        text: 'I am the red eye that has watched your world for centuries. A storm so old it has outlived empires. What am I?',
+        answer: ['great red spot', 'the great red spot', 'jupiter great red spot'],
+        hint: 'I am a storm on a giant planet, wider than Earth.',
+        reveal: 'Jupiter\'s Great Red Spot — a storm older than any memory, still spinning.'
       },
       {
-        text: 'I get wetter the more I dry. What am I?',
-        answer: ['towel', 'a towel'],
-        hint: 'You reach for me after bathing.',
-        reveal: 'A towel — the more useful it becomes, the more it carries.'
+        text: 'I am covered in ice, yet beneath it something moves. Perhaps something waits. What am I?',
+        answer: ['europa'],
+        hint: 'I am one of Jupiter\'s moons, and scientists watch me closely.',
+        reveal: 'Europa — a frozen shell over a hidden ocean, holding a question no one has answered yet.'
       },
       {
-        text: 'Lighter than a shadow, heavier than a mountain when carried. What am I?',
-        answer: ['secret', 'a secret'],
-        hint: 'Everyone has at least one of me.',
-        reveal: 'A secret — weightless to say, endless to keep.'
+        text: 'I have no center you can point to, and no edge you can reach. Everything within me is moving away from everything else. What am I?',
+        answer: ['the universe', 'universe', 'space'],
+        hint: 'You are inside me right now.',
+        reveal: 'The universe — expanding in every direction, with no outside to speak of.'
       },
       {
-        text: 'I am taken from the earth, wrapped in wood, and leave a mark wherever I touch. What am I?',
-        answer: ['pencil', 'a pencil'],
-        hint: 'Writers and children both reach for me.',
-        reveal: 'A pencil — pulled from the ground, wrapped in wood, drawn across the world.'
+        text: 'I was born in the first moments of everything — a whisper left over from a fire so large it made space itself. I am still here, cooling. What am I?',
+        answer: ['cosmic microwave background', 'cmb', 'background radiation', 'cosmic background radiation'],
+        hint: 'Astronomers discovered me by accident, mistaking me for static.',
+        reveal: 'The cosmic microwave background — the oldest light in existence, still reaching you from the beginning.'
       },
       {
-        text: 'I have no voice, yet I speak to every heart. No feet, yet I travel everywhere. What am I?',
-        answer: ['music', 'song', 'a song', 'melody', 'a melody'],
-        hint: 'Close your eyes. I will find you.',
-        reveal: 'Music — voiceless, weightless, and somehow the thing most felt.'
+        text: 'I am a star that has collapsed into something no wider than a city — spinning hundreds of times per second, sending out a beam like a lighthouse no one built. What am I?',
+        answer: ['pulsar', 'a pulsar', 'neutron star', 'a neutron star'],
+        hint: 'My pulse is so precise, scientists once thought it was a signal from someone else.',
+        reveal: 'A pulsar — a neutron star spinning so fast, its beam sweeps the sky like clockwork.'
       },
       {
-        text: 'The more you share me, the more of me remains. What am I?',
-        answer: ['knowledge', 'love', 'joy', 'happiness'],
-        hint: 'I am the only thing that grows when given away.',
-        reveal: 'Knowledge — the only thing that multiplies when divided.'
+        text: 'I travel for millions of years to reach you, then you blink, and I am gone. What am I?',
+        answer: ['starlight', 'light', 'a photon'],
+        hint: 'The star that sent me may no longer exist.',
+        reveal: 'Starlight — ancient before it arrives, and gone the moment it does.'
+      },
+      {
+        text: 'Ancient sailors followed me home across open water. I do not move, while everything else wheels around me. What am I?',
+        answer: ['polaris', 'north star', 'the north star', 'pole star'],
+        hint: 'I mark the axis of your world\'s spin.',
+        reveal: 'Polaris — the North Star, fixed while the whole sky turns around it.'
+      },
+      {
+        text: 'I am a hunter frozen in the sky, yet I hunt nothing. Three stars mark my belt, and I have been known by a thousand names. What am I?',
+        answer: ['orion', 'the hunter', 'orion constellation'],
+        hint: 'Look for three stars in a row on a clear winter night.',
+        reveal: 'Orion — the hunter who never moves, never catches anything, and is never forgotten.'
+      },
+      {
+        text: 'I appear only in the southern sky — four stars, no more. Small, but trusted by those who knew where to look. What am I?',
+        answer: ['southern cross', 'the southern cross', 'crux', 'crux constellation'],
+        hint: 'Nations have put me on their flags.',
+        reveal: 'The Southern Cross — small, precise, and home to those who navigate by it.'
+      },
+      {
+        text: 'I am not matter and I am not nothing. I push everything apart and cannot be touched, seen, or named with certainty. What am I?',
+        answer: ['dark energy', 'dark matter'],
+        hint: 'I make up most of what exists, and no one fully understands me.',
+        reveal: 'Dark energy — the force pulling the universe apart, invisible and ungraspable.'
+      },
+      {
+        text: 'I appear when a star passes behind something you cannot see. I betray the invisible. What am I?',
+        answer: ['gravitational lens', 'gravitational lensing', 'a gravitational lens'],
+        hint: 'Massive objects bend light around them.',
+        reveal: 'Gravitational lensing — gravity bending starlight around something hidden, revealing it by its absence.'
       },
     ];
 

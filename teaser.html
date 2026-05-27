@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Junis</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+    #wrap {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #name {
+      position: absolute;
+      top: 10%;
+      width: 100%;
+      text-align: center;
+      left: 10px;
+      font-family: 'Georgia', serif;
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      color: #c8d8ff;
+      text-shadow: 0 0 60px #7aaaffcc, 0 0 120px #4477ff88;
+      opacity: 0;
+      transition: opacity 3s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #sub {
+      position: absolute;
+      top: 6%;
+      width: 100%;
+      text-align: center;
+      left: -5px;
+      font-family: 'Georgia', serif;
+      font-size: clamp(0.55rem, 1.5vw, 0.85rem);
+      letter-spacing: 0.5em;
+      color: #7aaaffaa;
+      opacity: 0;
+      transition: opacity 3s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #tagline {
+      position: absolute;
+      top: 22%;
+      width: 100%;
+      text-align: center;
+      left: -5px;
+      font-family: 'Georgia', serif;
+      font-size: clamp(0.75rem, 2.2vw, 1.1rem);
+      letter-spacing: 0.4em;
+      color: #a0baffcc;
+      opacity: 0;
+      transition: opacity 3s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="bg"></canvas>
+  <canvas id="fg"></canvas>
+  <div id="name">JUNIS</div>
+  <div id="tagline">the starseer</div>
+  <div id="sub">coming soon</div>
+</div>
+
+<script>
+const wrap = document.getElementById('wrap');
+const W = wrap.clientWidth;
+const H = wrap.clientHeight;
+
+// ── background starfield ──────────────────────────────────────────
+const bg = document.getElementById('bg');
+bg.width = W; bg.height = H;
+const bctx = bg.getContext('2d');
+
+const STARS = Array.from({length: 300}, () => ({
+  x: Math.random() * W,
+  y: Math.random() * H,
+  r: Math.random() * 1.4 + 0.2,
+  speed: Math.random() * 0.003 + 0.001,
+  phase: Math.random() * Math.PI * 2,
+}));
+
+function drawBg(t) {
+  bctx.clearRect(0, 0, W, H);
+  const grd = bctx.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.35, H*0.75);
+  grd.addColorStop(0, '#0b1020');
+  grd.addColorStop(1, '#000005');
+  bctx.fillStyle = grd;
+  bctx.fillRect(0, 0, W, H);
+  // slow horizontal drift — earth rotating feel (~8px/s)
+  const driftX = (t * 8) % W;
+  const driftY = (t * 2) % H;
+  for (const s of STARS) {
+    const a = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.speed * 6.28 + s.phase));
+    const sx = (s.x + driftX) % W;
+    const sy = (s.y + driftY) % H;
+    bctx.beginPath();
+    bctx.arc(sx, sy, s.r, 0, Math.PI * 2);
+    bctx.fillStyle = `rgba(180,210,255,${a * 0.85})`;
+    bctx.fill();
+  }
+}
+
+// ── foreground: hand ──────────────────────────────────────────────
+const fg = document.getElementById('fg');
+fg.width = W; fg.height = H;
+const fctx = fg.getContext('2d');
+
+const handImg = new Image();
+handImg.src = 'hand.png';
+
+const HAND_W = W * 0.95;
+const HAND_H = HAND_W * (468 / 820);
+const HAND_X = (W - HAND_W) / 2 + W * 0.018;
+const HAND_REST_Y = H * 0.22;
+const HAND_START_Y = H + HAND_H * 0.2;
+const RISE_DURATION = 2.2;
+const RISE_DELAY    = 0.3;
+
+function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+// ── shooting stars ────────────────────────────────────────────────
+const SHOOTS = [];
+let nextShoot = 1.5;
+
+function spawnBatch(count) {
+  const angle = (Math.random() * 0.4 + 0.15) * Math.PI;
+  const speed = W * (0.6 + Math.random() * 0.5);
+  const len   = W * (0.12 + Math.random() * 0.1);
+  const vx = Math.cos(angle), vy = Math.sin(angle);
+  // perpendicular direction for spacing
+  const px = -vy, py = vx;
+  const spacing = W * 0.12;
+  const offset = -(count - 1) / 2;
+  for (let i = 0; i < count; i++) {
+    const d = (offset + i) * spacing;
+    const startX = W * 0.3 + px * d + (Math.random() - 0.5) * W * 0.1;
+    const startY = H * 0.25 + py * d + (Math.random() - 0.5) * H * 0.1;
+    SHOOTS.push({ x: startX, y: startY, vx: vx * speed, vy: vy * speed, len, life: -i * 0.05, maxLife: 0.5 + Math.random() * 0.3 });
+  }
+}
+
+// ── single big flash star ─────────────────────────────────────────
+// centered on the finger cluster (source 820x468)
+const FLASH_SX = 375, FLASH_SY = 88;
+
+let silCanvas = null;
+function buildSilhouette() {
+  silCanvas = document.createElement('canvas');
+  silCanvas.width = handImg.naturalWidth;
+  silCanvas.height = handImg.naturalHeight;
+  const sc = silCanvas.getContext('2d');
+  sc.drawImage(handImg, 0, 0);
+  const id = sc.getImageData(0, 0, silCanvas.width, silCanvas.height);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i+1], b = d[i+2];
+    if (g > 100 && g > r * 1.4 && g > b * 1.4) {
+      d[i+3] = 0;
+    } else {
+      const lum = (r*0.299 + g*0.587 + b*0.114) / 255;
+      d[i]   = Math.round(8  + lum * 15);
+      d[i+1] = Math.round(10 + lum * 18);
+      d[i+2] = Math.round(22 + lum * 32);
+    }
+  }
+  sc.putImageData(id, 0, 0);
+}
+
+let textShown = false;
+let textRevealTime = null; // when text fade started
+// text fully visible ~3s after name starts + 0.9s sub delay + 3s sub transition = ~6.9s after textRevealTime
+const TEXT_FULL_DELAY = 4.0; // conservative: stars appear ~4s after text starts fading in
+
+handImg.onload = () => {
+  buildSilhouette();
+  requestAnimationFrame(loop);
+};
+
+let start = null;
+function loop(ts) {
+  if (!start) start = ts;
+  const t = (ts - start) / 1000;
+
+  drawBg(t);
+  fctx.clearRect(0, 0, W, H);
+
+  // hand rise
+  const riseT = Math.max(0, t - RISE_DELAY);
+  const riseP = Math.min(1, riseT / RISE_DURATION);
+  const breatheOffset = riseP * H * 0.012 * Math.sin(t * 1.1);
+  const handY = HAND_START_Y + (HAND_REST_Y - HAND_START_Y) * easeOut(riseP) + breatheOffset;
+
+  if (silCanvas) {
+    fctx.drawImage(silCanvas, HAND_X, handY, HAND_W, HAND_H);
+  }
+
+  // trigger text when hand nearly landed
+  if (!textShown && riseP > 0.85) {
+    textShown = true;
+    textRevealTime = t;
+    document.getElementById('name').style.opacity = '1';
+    setTimeout(() => document.getElementById('tagline').style.opacity = '1', 500);
+    setTimeout(() => document.getElementById('sub').style.opacity = '1', 900);
+  }
+
+  // shooting stars
+  if (t > nextShoot) {
+    const count = 2 + Math.floor(Math.random() * 2); // 2 or 3
+    spawnBatch(count);
+    nextShoot = t + 2.0 + Math.random() * 3.0;
+  }
+  for (let i = SHOOTS.length - 1; i >= 0; i--) {
+    const s = SHOOTS[i];
+    s.life += 1/60;
+    if (s.life > s.maxLife) { SHOOTS.splice(i, 1); continue; }
+    const prog = s.life / s.maxLife;
+    const fade = prog < 0.2 ? prog/0.2 : 1 - (prog - 0.2)/0.8;
+    const tx = s.x + s.vx * s.life;
+    const ty = s.y + s.vy * s.life;
+    const tailX = tx - (s.vx / Math.hypot(s.vx, s.vy)) * s.len;
+    const tailY = ty - (s.vy / Math.hypot(s.vx, s.vy)) * s.len;
+    const grad = fctx.createLinearGradient(tailX, tailY, tx, ty);
+    grad.addColorStop(0, `rgba(200,225,255,0)`);
+    grad.addColorStop(1, `rgba(255,255,255,${fade * 0.9})`);
+    fctx.beginPath();
+    fctx.moveTo(tailX, tailY);
+    fctx.lineTo(tx, ty);
+    fctx.strokeStyle = grad;
+    fctx.lineWidth = 1.5;
+    fctx.stroke();
+  }
+
+  // big flash star on hand — appears after text is fully visible
+  if (textRevealTime !== null) {
+    const sinceReveal = t - textRevealTime;
+    // flash in fast (0.4s), always at full brightness, slow pulse adds on top
+    const flashIn = Math.min(1, Math.max(0, (sinceReveal - TEXT_FULL_DELAY) / 0.4));
+    const pulse = 0.12 * Math.sin(t * 1.8); // subtle pulse on top of max baseline
+    const a = flashIn;
+
+    if (a > 0.01) {
+      const cx = W / 2;
+      const cy = H / 2;
+      const size = Math.min(W, H) * 0.28;
+
+      fctx.save();
+      fctx.translate(cx, cy);
+
+      // all layers use additive blending to blow out beyond alpha=1
+      fctx.globalCompositeOperation = 'lighter';
+
+      // wide soft bloom — drawn twice to stack brightness
+      for (let i = 0; i < 2; i++) {
+        fctx.globalAlpha = (0.3 + pulse) * a;
+        const bloom = fctx.createRadialGradient(0, 0, 0, 0, 0, size * 2.0);
+        bloom.addColorStop(0,   'rgba(200,225,255,1)');
+        bloom.addColorStop(0.2, 'rgba(160,205,255,0.6)');
+        bloom.addColorStop(0.6, 'rgba(100,170,255,0.15)');
+        bloom.addColorStop(1,   'rgba(60,130,255,0)');
+        fctx.beginPath();
+        fctx.arc(0, 0, size * 2.0, 0, Math.PI * 2);
+        fctx.fillStyle = bloom;
+        fctx.fill();
+      }
+
+      // inner hot bloom
+      fctx.globalAlpha = (0.5 + pulse) * a;
+      const hot = fctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.7);
+      hot.addColorStop(0,   'rgba(240,248,255,1)');
+      hot.addColorStop(0.4, 'rgba(180,220,255,0.6)');
+      hot.addColorStop(1,   'rgba(120,180,255,0)');
+      fctx.beginPath();
+      fctx.arc(0, 0, size * 0.7, 0, Math.PI * 2);
+      fctx.fillStyle = hot;
+      fctx.fill();
+
+      // long cross spikes
+      fctx.globalAlpha = (1.0 + pulse) * a;
+      [[0, size * 1.1, size*0.06], [Math.PI/2, size*0.75, size*0.045]].forEach(([angle, len, w]) => {
+        for (const dir of [0, Math.PI]) {
+          fctx.save();
+          fctx.rotate(angle + dir);
+          const spike = fctx.createLinearGradient(0, 0, 0, len);
+          spike.addColorStop(0,   'rgba(255,255,255,1)');
+          spike.addColorStop(0.3, 'rgba(200,230,255,0.6)');
+          spike.addColorStop(1,   'rgba(140,200,255,0)');
+          fctx.beginPath();
+          fctx.moveTo(-w, 0);
+          fctx.lineTo(0, len);
+          fctx.lineTo(w, 0);
+          fctx.fillStyle = spike;
+          fctx.fill();
+          fctx.restore();
+        }
+      });
+
+      // white-hot core
+      for (let i = 0; i < 1; i++) {
+        fctx.globalAlpha = a;
+        const core = fctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.14);
+        core.addColorStop(0, 'rgba(255,255,255,1)');
+        core.addColorStop(1, 'rgba(220,240,255,0)');
+        fctx.beginPath();
+        fctx.arc(0, 0, size * 0.14, 0, Math.PI * 2);
+        fctx.fillStyle = core;
+        fctx.fill();
+      }
+
+      fctx.restore();
+    }
+  }
+
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

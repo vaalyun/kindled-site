@@ -32,10 +32,14 @@ function initStars() {
 }
 
 function drawStars(t) {
+  const driftX = (t * 0.008) % W;
+  const driftY = (t * 0.002) % H;
   for (const s of stars) {
-    const o = s.base + Math.sin(t * s.freq * 1000 + s.phase) * s.amp;
+    const o  = s.base + Math.sin(t * s.freq * 1000 + s.phase) * s.amp;
+    const sx = (s.x + driftX + W) % W;
+    const sy = (s.y + driftY + H) % H;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(190, 215, 255, ${Math.min(1, Math.max(0, o))})`;
     ctx.fill();
   }
@@ -295,6 +299,9 @@ function runIntro() {
 
   const langToggle = document.getElementById('lang-toggle');
   if (langToggle) setTimeout(() => langToggle.classList.remove('pre-hidden'), lastLetterStart + 1200);
+
+  const loreWrap = document.getElementById('lore-wrap');
+  if (loreWrap) setTimeout(() => loreWrap.classList.remove('pre-hidden'), lastLetterStart + 1600);
 }
 
 window.addEventListener('load', () => setTimeout(runIntro, 400));
@@ -589,3 +596,151 @@ const observer = new IntersectionObserver(entries => {
 }, { threshold: 0.12 });
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── Ambient sound (site-wide) ──────────────────────────────────────────────────
+(function () {
+  // Inject button
+  const btn = document.createElement('button');
+  btn.id = 'ambient-btn';
+  btn.innerHTML = '<svg width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 4 C2.5 1,4 1,5.5 4 C7 7,8.5 7,10 4 C11 2,12 2,13 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> ambient';
+  btn.style.cssText = 'position:fixed;bottom:1.2rem;left:1.2rem;background:rgba(5,12,28,0.75);border:1px solid rgba(100,160,255,0.18);color:rgba(160,185,230,0.55);font-family:inherit;font-size:0.68rem;letter-spacing:0.12em;padding:0.32rem 0.7rem;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:0.4rem;z-index:999;transition:color .2s,border-color .2s;white-space:nowrap;';
+  btn.addEventListener('mouseenter', () => { btn.style.color = 'rgba(220,235,255,0.9)'; btn.style.borderColor = 'rgba(100,160,255,0.5)'; });
+  btn.addEventListener('mouseleave', () => {
+    btn.style.color = ambientOn ? 'rgba(220,235,255,0.9)' : 'rgba(160,185,230,0.55)';
+    btn.style.borderColor = ambientOn ? 'rgba(100,160,255,0.45)' : 'rgba(100,160,255,0.18)';
+  });
+  document.body.appendChild(btn);
+
+  let ambientOn     = false;
+  let ambientCtx    = null;
+  let ambientGain   = null;
+  let ambientSource = null;
+  let ambientBuffer = null;
+  let ambientLoopStart = 0;
+  let ambientLoopEnd   = 0;
+
+  function detectLoopPoints(buffer, threshold = 0.001) {
+    const data = buffer.getChannelData(0);
+    let start = 0, end = data.length - 1;
+    for (let i = 0; i < data.length; i++)       { if (Math.abs(data[i]) > threshold) { start = i; break; } }
+    for (let i = data.length - 1; i >= 0; i--)  { if (Math.abs(data[i]) > threshold) { end = i;   break; } }
+    return { start: start / buffer.sampleRate, end: end / buffer.sampleRate };
+  }
+
+  async function initAmbient() {
+    ambientCtx  = new (window.AudioContext || window.webkitAudioContext)();
+    ambientGain = ambientCtx.createGain();
+    ambientGain.gain.value = 0;
+    ambientGain.connect(ambientCtx.destination);
+    const res = await fetch('/ambient.mp3');
+    const raw = await res.arrayBuffer();
+    ambientBuffer = await ambientCtx.decodeAudioData(raw);
+    const pts = detectLoopPoints(ambientBuffer);
+    ambientLoopStart = pts.start;
+    ambientLoopEnd   = pts.end;
+  }
+
+  function startSource() {
+    ambientSource = ambientCtx.createBufferSource();
+    ambientSource.buffer    = ambientBuffer;
+    ambientSource.loop      = true;
+    ambientSource.loopStart = ambientLoopStart;
+    ambientSource.loopEnd   = ambientLoopEnd;
+    ambientSource.connect(ambientGain);
+    ambientSource.start(0, ambientLoopStart);
+  }
+
+  function ramp(from, to, ms, onDone) {
+    const steps = 40, dt = ms / steps, delta = (to - from) / steps;
+    let step = 0;
+    const iv = setInterval(() => {
+      step++;
+      ambientGain.gain.value = Math.min(1, Math.max(0, from + delta * step));
+      if (step >= steps) { clearInterval(iv); if (onDone) onDone(); }
+    }, dt);
+  }
+
+  function setActive(on) {
+    btn.style.color = on ? 'rgba(220,235,255,0.9)' : 'rgba(160,185,230,0.55)';
+    btn.style.borderColor = on ? 'rgba(100,160,255,0.45)' : 'rgba(100,160,255,0.18)';
+  }
+
+  async function toggle() {
+    if (!ambientCtx) await initAmbient();
+    if (ambientCtx.state === 'suspended') await ambientCtx.resume();
+    ambientOn = !ambientOn;
+    localStorage.setItem('junAmbient', ambientOn ? '1' : '0');
+    if (ambientOn) {
+      startSource();
+      ramp(0, 0.08, 2500);
+    } else {
+      ramp(ambientGain.gain.value, 0, 2500, () => { ambientSource.stop(); ambientSource = null; });
+    }
+    setActive(ambientOn);
+  }
+
+  btn.addEventListener('click', toggle);
+
+  // On by default — only off if user explicitly toggled it off
+  async function autoStart() {
+    if (localStorage.getItem('junAmbient') === '0') return;
+    try {
+      await initAmbient();
+      if (ambientCtx.state === 'suspended') await ambientCtx.resume();
+      ambientOn = true;
+      startSource();
+      ambientGain.gain.value = 0.08; // no fade-in — feels continuous across pages
+      setActive(true);
+    } catch (_) {}
+  }
+
+  window.addEventListener('load', () => {
+    autoStart().catch(() => {
+      // Autoplay blocked — start on first interaction instead
+      const onInteract = () => {
+        autoStart();
+        window.removeEventListener('click', onInteract);
+        window.removeEventListener('keydown', onInteract);
+      };
+      window.addEventListener('click', onInteract);
+      window.addEventListener('keydown', onInteract);
+    });
+  });
+})();
+// ───────────────────────────────────────────────────────────────────────────────
+
+// ── Click sound ────────────────────────────────────────────────────────────────
+(function () {
+  let clickCtx    = null;
+  let clickBuffer = null;
+
+  async function loadClick() {
+    clickCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const res = await fetch('/click.wav');
+    const raw = await res.arrayBuffer();
+    clickBuffer = await clickCtx.decodeAudioData(raw);
+  }
+
+  function playClick() {
+    if (!clickCtx || !clickBuffer) return;
+    if (clickCtx.state === 'suspended') clickCtx.resume();
+    const src  = clickCtx.createBufferSource();
+    const gain = clickCtx.createGain();
+    gain.gain.value = 0.45;
+    src.buffer = clickBuffer;
+    src.connect(gain);
+    gain.connect(clickCtx.destination);
+    src.start();
+  }
+
+  document.addEventListener('click', e => {
+    const target = e.target.closest('button, a, [role="menuitem"], [role="button"]');
+    if (!target) return;
+    if (!clickCtx) {
+      loadClick().then(playClick).catch(() => {});
+    } else {
+      playClick();
+    }
+  }, { passive: true });
+})();
+// ───────────────────────────────────────────────────────────────────────────────

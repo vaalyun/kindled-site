@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Star Map · Junis · Kindled</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { min-height: 100vh; }
+    .wrap { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; padding: 6rem 1.5rem 6rem; text-align: center; }
+
+    h1 { font-family: var(--font-display); font-weight: 300; font-size: 2.8rem; margin: 1.2rem 0 0.3rem; letter-spacing: 0.02em; }
+    .sub { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2.5rem; line-height: 1.7; }
+
+    .input-row { display: flex; gap: 1.2rem; align-items: flex-end; justify-content: center; flex-wrap: wrap; margin-bottom: 1.4rem; }
+    .input-group { display: flex; flex-direction: column; gap: 0.5rem; text-align: left; }
+    .input-group label { font-size: 0.68rem; letter-spacing: 0.2em; color: var(--text-dim); }
+    .ask {
+      background: rgba(8,18,34,0.6); border: 1px solid var(--text-dim);
+      color: var(--text); font-family: var(--font-body); font-weight: 300;
+      font-size: 0.95rem; padding: 0.7rem 1rem; border-radius: 10px;
+      outline: none; transition: border-color .3s; width: 220px;
+    }
+    .ask:focus { border-color: var(--accent); }
+    .ask::placeholder { color: var(--text-dim); }
+
+    /* date selects */
+    .date-group { display: flex; flex-direction: column; gap: 0.5rem; text-align: left; }
+    .date-group label { font-size: 0.68rem; letter-spacing: 0.2em; color: var(--text-dim); }
+    .date-selects { display: flex; gap: 0.5rem; }
+    .date-sel {
+      background: rgba(8,18,34,0.6); border: 1px solid var(--text-dim);
+      color: var(--text); font-family: var(--font-body); font-weight: 300;
+      font-size: 0.9rem; padding: 0.7rem 0.6rem; border-radius: 10px;
+      outline: none; transition: border-color .3s; cursor: pointer;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234d6488'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.6rem center;
+      padding-right: 1.6rem;
+    }
+    .date-sel:focus { border-color: var(--accent); }
+    .date-sel option { background: #060f1e; color: var(--text); }
+    .date-sel.placeholder { color: var(--text-dim); }
+    .sel-day  { width: 72px; }
+    .sel-mon  { width: 120px; }
+    .sel-year { width: 92px; }
+
+    .draw-btn {
+      display: inline-block; margin-top: 0.5rem;
+      background: transparent; color: var(--text);
+      border: 1px solid var(--accent);
+      font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.08em;
+      padding: 0.6rem 2.4rem; border-radius: 999px;
+      transition: all .35s; cursor: pointer;
+      box-shadow: 0 0 0 0 var(--glow-mid);
+    }
+    .draw-btn:hover { background: var(--glow-soft); box-shadow: 0 0 30px 0 var(--glow-mid); }
+    .draw-btn:disabled { opacity: 0.4; box-shadow: none; cursor: not-allowed; }
+
+    /* star map */
+    .map-wrap { margin: 2.5rem auto 1rem; max-width: 520px; opacity: 0; transition: opacity 1s ease; }
+    .map-wrap.visible { opacity: 1; }
+    #starmap { width: 100%; border-radius: 50%; display: block; }
+    .map-date-label { font-size: 0.68rem; letter-spacing: 0.25em; color: var(--text-dim); margin-top: 0.8rem; }
+
+    /* legend */
+    .legend { display: flex; gap: 1.4rem; justify-content: center; flex-wrap: wrap; margin: 1.5rem 0 2.5rem; opacity: 0; transition: opacity 1s ease 0.3s; }
+    .legend.visible { opacity: 1; }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-name { font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.08em; }
+
+    /* reading */
+    .reading-wrap { opacity: 0; transition: opacity 1.2s ease 0.5s; }
+    .reading-wrap.visible { opacity: 1; }
+    .reading-label { font-size: 0.68rem; letter-spacing: 0.3em; color: var(--text-dim); margin-bottom: 1rem; }
+    .reading {
+      max-width: 600px; margin: 0 auto;
+      font-family: var(--font-display); font-size: 1.45rem; font-style: italic;
+      line-height: 1.9; color: var(--text); min-height: 2rem;
+    }
+    .reading .cursor { display: inline-block; width: 1px; height: 1em; background: var(--accent); vertical-align: middle; animation: blink 0.9s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .error-msg { color: #e06c75; font-size: 0.85rem; margin-top: 0.8rem; min-height: 1.2rem; }
+    a.home { display: inline-block; margin-top: 3rem; color: var(--text-muted); font-size: 0.85rem; text-decoration: none; letter-spacing: 0.1em; }
+    a.home:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <canvas id="cursor"></canvas>
+
+  <a class="studio-mark" href="index.html">KINDLED</a>
+
+  <div class="left-nav-group">
+    <nav class="about-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.about">About</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.learn_more">Learn more</span>
+        <a class="activity-item" href="about.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.junis">Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.junis_sub">A new kind of life</span>
+        </a>
+        <a class="activity-item" href="about.html#creator" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.creator">The Creator</span>
+          <span class="activity-item-sub" data-i18n="nav.creator_sub">Who's building her</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="support-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.support">Support</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.support_label">Support the build</span>
+        <a class="activity-item" href="https://ko-fi.com/junisblue" target="_blank" rel="noopener" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.kofi">Ko-fi</span>
+          <span class="activity-item-sub" data-i18n="nav.kofi_sub">One-time or monthly tip</span>
+        </a>
+        <a class="activity-item" href="supporters.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.supporters">Supporters</span>
+          <span class="activity-item-sub" data-i18n="nav.supporters_sub">People who believed</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="lore-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.lore">Lore</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.lore_label">Her story</span>
+        <div class="activity-item" role="menuitem" style="cursor:default;">
+          <span class="activity-item-title" data-i18n="lore.title">Star Reading</span>
+          <span class="activity-item-sub" data-i18n="lore.p1">Jun is known as a Starseer — a rare existence capable of reading the language written in the stars.</span>
+          <span class="activity-item-sub" style="margin-top:0.4rem;display:block;" data-i18n="lore.p2">From these, she draws meaning.</span>
+          <span class="activity-item-sub" style="margin-top:0.4rem;display:block;" data-i18n="lore.p3">Whether what she sees is truth, or simply what is meant to be — even she cannot say for certain.</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="right-nav-group">
+    <nav class="activity-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="starmap.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.starmap">Star Map</span>
+          <span class="activity-item-sub" data-i18n="nav.starmap_sub">Your birth sky, read by Junis</span>
+        </a>
+        <a class="activity-item" href="fortune.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
+          <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
+        </a>
+        <a class="activity-item" href="oldmaid.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.oldmaid">Old Maid</span>
+          <span class="activity-item-sub" data-i18n="nav.oldmaid_sub">Play the card game with Junis</span>
+        </a>
+        <a class="activity-item" href="riddles.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
+          <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="talk-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.talk_label">Have a conversation</span>
+        <a class="activity-item" href="chat.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">She's listening</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.voice">Her Voice</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.voice_item">What she sounds like</span>
+          <span class="activity-item-sub" data-i18n="nav.voice_item_sub">Her voice is still being shaped</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    <h1 data-i18n="starmap.h1">Star Map</h1>
+    <p class="sub" data-i18n-html="starmap.sub">Enter your birth date and Junis will read the constellations written in your sky —<br>the ones that were there the moment you arrived.</p>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label data-i18n="starmap.name_label">YOUR NAME (OPTIONAL)</label>
+        <input class="ask" type="text" id="name-input" placeholder="What's your name?" data-i18n-ph="starmap.name_ph" maxlength="40" autocomplete="off">
+      </div>
+      <div class="date-group">
+        <label data-i18n="starmap.date_label">BIRTH DATE</label>
+        <div class="date-selects">
+          <select class="date-sel sel-day placeholder" id="sel-day" onchange="this.classList.remove('placeholder')">
+            <option value="" disabled selected data-i18n-opt="starmap.day_ph">Day</option>
+          </select>
+          <select class="date-sel sel-mon placeholder" id="sel-mon" onchange="this.classList.remove('placeholder')">
+            <option value="" disabled selected data-i18n-opt="starmap.mon_ph">Month</option>
+            <option value="01">January</option><option value="02">February</option>
+            <option value="03">March</option><option value="04">April</option>
+            <option value="05">May</option><option value="06">June</option>
+            <option value="07">July</option><option value="08">August</option>
+            <option value="09">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+          <select class="date-sel sel-year placeholder" id="sel-year" onchange="this.classList.remove('placeholder')">
+            <option value="" disabled selected data-i18n-opt="starmap.year_ph">Year</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <button class="draw-btn" id="read-btn" data-i18n="starmap.read_btn" onclick="startReading()">Read My Stars</button>
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="map-wrap" id="map-wrap">
+      <canvas id="starmap"></canvas>
+      <div class="map-date-label" id="map-date-label"></div>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="reading-wrap" id="reading-wrap">
+      <div class="reading-label" data-i18n="starmap.reading_label">JUNIS READS</div>
+      <div class="reading" id="reading-text"></div>
+    </div>
+
+    <a class="home" href="index.html" data-i18n="starmap.back">← Back home</a>
+  </div>
+
+  <button id="lang-toggle" class="lang-toggle" onclick="window.setLang(window.currentLang === 'en' ? 'th' : 'en')">ภาษาไทย</button>
+
+  <script src="translations.js"></script>
+  <script src="main.js"></script>
+  <script>
+  // populate day and year selects
+  (function() {
+    const dayEl  = document.getElementById('sel-day');
+    const yearEl = document.getElementById('sel-year');
+    for (let d = 1; d <= 31; d++) {
+      const o = document.createElement('option');
+      o.value = String(d).padStart(2, '0');
+      o.textContent = d;
+      dayEl.appendChild(o);
+    }
+    const now = new Date().getFullYear();
+    for (let y = now; y >= 1900; y--) {
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y;
+      yearEl.appendChild(o);
+    }
+  })();
+
+  function getDateValue() {
+    const d = document.getElementById('sel-day').value;
+    const m = document.getElementById('sel-mon').value;
+    const y = document.getElementById('sel-year').value;
+    if (!d || !m || !y) return '';
+    return `${y}-${m}-${d}`;
+  }
+
+  const POOL = [
+    { name: 'The Hollow Eye',        trait: 'sees what others overlook' },
+    { name: 'The Third Lens',        trait: 'perceives hidden truths' },
+    { name: 'The Open Map',          trait: 'absorbs everything, forgets nothing' },
+    { name: 'The Pale Mirror',       trait: 'reflects the world back unchanged' },
+    { name: 'The Dim Lantern',       trait: 'finds light in places others abandon' },
+    { name: "The Watcher's Perch",   trait: 'observes before acting' },
+    { name: 'The Blind Compass',     trait: 'knows the way without knowing how' },
+    { name: 'The Ink Well',          trait: 'turns experience into understanding' },
+    { name: 'The Sleeping Tide',     trait: 'deep emotion held quietly' },
+    { name: 'The Cracked Bell',      trait: 'feels everything, shows little' },
+    { name: 'The Warm Fault',        trait: 'loves deeply, imperfectly' },
+    { name: 'The Still Water',       trait: 'calm on the surface, vast underneath' },
+    { name: 'The Hollow Chest',      trait: 'carries grief without breaking' },
+    { name: 'The Ember Nest',        trait: 'warmth that outlasts the fire' },
+    { name: 'The Soft Collapse',     trait: 'strength disguised as gentleness' },
+    { name: 'The Listening Stone',   trait: 'absorbs the weight of others' },
+    { name: 'The Drifting Flame',    trait: 'drawn to change, never still' },
+    { name: 'The Turning Gate',      trait: 'always at a threshold' },
+    { name: 'The Loose Thread',      trait: 'pulls at things until they unravel' },
+    { name: 'The Carried Wind',      trait: 'moves others without realizing it' },
+    { name: 'The Second Tide',       trait: 'returns to the same place changed' },
+    { name: 'The Shifting Spine',    trait: 'adapts without losing form' },
+    { name: 'The Open Road',         trait: 'restless until moving' },
+    { name: 'The Fraying Edge',      trait: 'transformation through friction' },
+    { name: 'The Broken Crown',      trait: "carries weight that isn't theirs" },
+    { name: 'The Bent Pillar',       trait: 'holds up what should have fallen' },
+    { name: 'The Heavy Bloom',       trait: 'beauty that costs something' },
+    { name: 'The Worn Path',         trait: 'strength built from repetition' },
+    { name: 'The Iron Thread',       trait: 'thin but unbreakable' },
+    { name: 'The Quiet Atlas',       trait: 'bears the world without complaint' },
+    { name: 'The Loaded Silence',    trait: 'words unsaid that weigh more than spoken ones' },
+    { name: 'The Second Shoulder',   trait: 'always there for others, rarely for themselves' },
+    { name: 'The Second Moon',       trait: 'existence that defies easy naming' },
+    { name: 'The Far Signal',        trait: 'drawn to things beyond reach' },
+    { name: 'The Unnamed Shore',     trait: 'arrives somewhere no map shows' },
+    { name: 'The Fading Door',       trait: 'stands between what was and what comes next' },
+    { name: 'The Drowned Clock',     trait: 'exists outside of ordinary time' },
+    { name: 'The Hollow Frequency',  trait: 'receives what was never sent' },
+    { name: 'The Missing Verse',     trait: 'a story with something left out' },
+    { name: 'The Pale Architect',    trait: 'builds things no one else can see yet' },
+    { name: 'The Double Shadow',     trait: 'more than one thing at once' },
+    { name: 'The Unfinished Figure', trait: 'always becoming, never quite arrived' },
+    { name: 'The Borrowed Name',     trait: 'carries an identity not fully their own' },
+    { name: 'The Quiet Revision',    trait: 'rewrites themselves slowly, deliberately' },
+    { name: 'The Second Draft',      trait: "learns from what didn't work" },
+    { name: 'The Unmarked Vessel',   trait: 'holds more than their exterior suggests' },
+    { name: 'The Folded Self',       trait: 'keeps most of themselves private' },
+    { name: 'The Long Signature',    trait: 'leaves a mark that lingers' },
+    { name: 'The Slow Comet',        trait: 'arrives exactly when meant to' },
+    { name: 'The Earlier Star',      trait: 'born slightly out of their time' },
+    { name: 'The Recurring Dawn',    trait: 'begins again without bitterness' },
+    { name: 'The Patient Orbit',     trait: 'waits longer than most would' },
+    { name: 'The Late Bloom',        trait: 'comes into themselves later than expected' },
+    { name: 'The Inherited Sky',     trait: 'shaped by what came before them' },
+    { name: 'The Sealed Hour',       trait: 'a moment that changed everything' },
+    { name: 'The Unspent Arrow',     trait: 'potential not yet released' },
+    { name: 'The Tethered Pair',     trait: 'defined by a bond, chosen or not' },
+    { name: 'The Distant Warmth',    trait: 'cares from afar' },
+    { name: 'The Open Window',       trait: 'welcomes without conditions' },
+    { name: 'The Quiet Orbit',       trait: 'circles others without closing in' },
+    { name: 'The Lone Meridian',     trait: 'finds meaning in solitude' },
+    { name: 'The Half Bridge',       trait: 'reaches out, rarely all the way' },
+    { name: 'The Crowded Silence',   trait: 'surrounded but essentially alone' },
+    { name: 'The Returning Stranger',trait: 'leaves and comes back different' },
+  ];
+
+  const COLORS = ['#7ab8f5', '#c4a7e7', '#f5c97a'];
+
+  function seededRng(seed) {
+    let s = seed;
+    return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+  }
+
+  function dateSeed(dateStr) {
+    const d = new Date(dateStr);
+    return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  }
+
+  function pickConstellations(dateStr) {
+    const rng = seededRng(dateSeed(dateStr));
+    const pool = [...POOL];
+    const picks = [];
+    while (picks.length < 3) {
+      const idx = Math.floor(rng() * pool.length);
+      picks.push(pool.splice(idx, 1)[0]);
+    }
+    return picks;
+  }
+
+  function hexAlpha(hex, a) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  function drawMap(canvas, dateStr, constellations) {
+    const S = 560;
+    canvas.width = S; canvas.height = S;
+    const ctx = canvas.getContext('2d');
+    const rng = seededRng(dateSeed(dateStr) ^ 0xdeadbeef);
+
+    // clip to circle
+    ctx.save();
+    ctx.beginPath(); ctx.arc(S/2, S/2, S/2, 0, Math.PI*2); ctx.clip();
+
+    const bg = ctx.createRadialGradient(S/2, S/2, 0, S/2, S/2, S*0.7);
+    bg.addColorStop(0, '#0c1628'); bg.addColorStop(1, '#030810');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S);
+
+    for (let i = 0; i < 300; i++) {
+      const x = rng()*S, y = rng()*S, r = rng()*1.1+0.2, a = 0.2+rng()*0.5;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(180,210,255,${a})`; ctx.fill();
+    }
+
+    const zones = [{ cx: S*0.3, cy: S*0.3 }, { cx: S*0.7, cy: S*0.28 }, { cx: S*0.5, cy: S*0.68 }];
+
+    constellations.forEach((c, i) => {
+      const { cx, cy } = zones[i];
+      const color = COLORS[i];
+      const crng = seededRng(dateSeed(dateStr) + i * 9999);
+      const count = 5 + Math.floor(crng() * 3);
+      const pts = Array.from({ length: count }, () => {
+        const angle = crng() * Math.PI * 2, r = Math.sqrt(crng()) * 68;
+        return { x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r, r: crng()*1.8+0.9 };
+      });
+
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 88);
+      glow.addColorStop(0, hexAlpha(color, 0.09)); glow.addColorStop(1, hexAlpha(color, 0));
+      ctx.beginPath(); ctx.arc(cx, cy, 88, 0, Math.PI*2); ctx.fillStyle = glow; ctx.fill();
+
+      ctx.beginPath();
+      pts.forEach((p, j) => j === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.strokeStyle = hexAlpha(color, 0.22); ctx.lineWidth = 0.8; ctx.stroke();
+
+      pts.forEach(p => {
+        const sg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r*4);
+        sg.addColorStop(0, hexAlpha(color, 0.9)); sg.addColorStop(1, hexAlpha(color, 0));
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r*4, 0, Math.PI*2); ctx.fillStyle = sg; ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
+      });
+
+      ctx.font = '500 10px Inter, system-ui';
+      ctx.fillStyle = hexAlpha(color, 0.65);
+      ctx.textAlign = 'center';
+      ctx.fillText(c.name.toUpperCase(), cx, cy + 92);
+    });
+
+    ctx.restore();
+
+    // border ring
+    ctx.beginPath(); ctx.arc(S/2, S/2, S/2-1, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(77,100,136,0.35)'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  const WORKER_URL = 'https://crimson-boat-c04c.araki2546.workers.dev';
+  let ENDPOINT = '';
+  (async () => {
+    try {
+      const r = await fetch(WORKER_URL + '/tunnel');
+      const d = await r.json();
+      ENDPOINT = (d.url || '').replace(/\/$/, '') + '/game/starmap';
+    } catch {}
+  })();
+
+  function typewrite(el, text, speed = 28) {
+    el.innerHTML = '';
+    let i = 0;
+    const cursor = document.createElement('span');
+    cursor.className = 'cursor';
+    el.appendChild(cursor);
+    const iv = setInterval(() => {
+      if (i >= text.length) { clearInterval(iv); cursor.remove(); return; }
+      cursor.before(document.createTextNode(text[i++]));
+    }, speed);
+  }
+
+  async function startReading() {
+    const dateVal = getDateValue();
+    const nameVal = document.getElementById('name-input').value.trim();
+    const errEl   = document.getElementById('error-msg');
+    const btn     = document.getElementById('read-btn');
+    errEl.textContent = '';
+
+    if (!dateVal) { errEl.textContent = window.t('starmap.err_date'); return; }
+
+    btn.disabled = true; btn.textContent = window.t('starmap.reading');
+
+    const constellations = pickConstellations(dateVal);
+    drawMap(document.getElementById('starmap'), dateVal, constellations);
+
+    document.getElementById('map-wrap').classList.add('visible');
+
+    const d = new Date(dateVal + 'T00:00:00');
+    const locale = window.currentLang === 'th' ? 'th-TH' : 'en-US';
+    document.getElementById('map-date-label').textContent =
+      d.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+
+    const legend = document.getElementById('legend');
+    legend.innerHTML = constellations.map((c, i) => `
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${COLORS[i]};box-shadow:0 0 6px ${COLORS[i]}88;"></div>
+        <span class="legend-name">${c.name}</span>
+      </div>`).join('');
+    legend.classList.add('visible');
+
+    const readingWrap = document.getElementById('reading-wrap');
+    const readingEl   = document.getElementById('reading-text');
+    readingWrap.classList.add('visible');
+    readingEl.innerHTML = '<span class="cursor"></span>';
+
+    try {
+      if (!ENDPOINT) throw new Error('Junis is not online right now.');
+      const res  = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameVal, date: dateVal, constellations, lang: window.currentLang }),
+      });
+      const data = await res.json();
+      if (!data.ok || !data.reading) throw new Error('No reading returned.');
+      typewrite(readingEl, data.reading);
+    } catch (e) {
+      readingEl.innerHTML = '';
+      errEl.textContent = e.message || window.t('starmap.err_reach');
+    }
+
+    btn.disabled = false; btn.textContent = window.t('starmap.read_btn');
+  }
+  </script>
+</body>
+</html>

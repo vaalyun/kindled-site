@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Talk to Junis · Kindled</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { overflow: hidden; }
+
+    .chat-layout {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* ── Model panel ── */
+    .model-panel {
+      width: 52%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      flex-shrink: 0;
+      pointer-events: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .model-silhouette {
+      width: 100%;
+      aspect-ratio: 1672 / 941;
+      -webkit-mask-image: url(junispose2-mask.png);
+      mask-image: url(junispose2-mask.png);
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
+      filter: drop-shadow(0 0 18px rgba(80, 130, 255, 0.18));
+      animation: junBreathe 5s ease-in-out infinite, junGlow 5s ease-in-out infinite;
+      transform-origin: 50% 100%;
+    }
+
+    @keyframes junGlow {
+      0%, 100% { filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.12)) drop-shadow(0 0 40px rgba(200, 220, 255, 0.08)); }
+      50%       { filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.28)) drop-shadow(0 0 70px rgba(210, 230, 255, 0.16)); }
+    }
+
+    @keyframes junThinking {
+      0%, 100% { filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.30)) drop-shadow(0 0 60px rgba(200, 225, 255, 0.22)); }
+      50%       { filter: drop-shadow(0 0 46px rgba(255, 255, 255, 0.62)) drop-shadow(0 0 110px rgba(210, 235, 255, 0.42)); }
+    }
+
+    .model-silhouette.thinking {
+      animation: junBreathe 5s ease-in-out infinite, junThinking 1.6s ease-in-out infinite;
+    }
+
+    /* ── Mood glows ── */
+    @keyframes junGlowCurious {
+      0%, 100% { filter: drop-shadow(0 0 18px rgba(120, 150, 255, 0.20)) drop-shadow(0 0 45px rgba(100, 140, 255, 0.12)); }
+      50%       { filter: drop-shadow(0 0 30px rgba(140, 170, 255, 0.42)) drop-shadow(0 0 80px rgba(120, 160, 255, 0.22)); }
+    }
+    @keyframes junGlowAmused {
+      0%, 100% { filter: drop-shadow(0 0 18px rgba(255, 245, 180, 0.18)) drop-shadow(0 0 40px rgba(255, 230, 140, 0.10)); }
+      50%       { filter: drop-shadow(0 0 32px rgba(255, 250, 200, 0.40)) drop-shadow(0 0 75px rgba(255, 240, 160, 0.22)); }
+    }
+    @keyframes junGlowSomber {
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(80, 100, 140, 0.14)) drop-shadow(0 0 28px rgba(60, 80, 120, 0.08)); }
+      50%       { filter: drop-shadow(0 0 18px rgba(90, 110, 150, 0.22)) drop-shadow(0 0 45px rgba(70, 90, 130, 0.12)); }
+    }
+
+    .model-silhouette[data-mood="curious"] { animation: junBreathe 5s ease-in-out infinite, junGlowCurious 5s ease-in-out infinite; }
+    .model-silhouette[data-mood="amused"]  { animation: junBreathe 5s ease-in-out infinite, junGlowAmused  4s ease-in-out infinite; }
+    .model-silhouette[data-mood="somber"]  { animation: junBreathe 6s ease-in-out infinite, junGlowSomber  6s ease-in-out infinite; }
+    .model-silhouette[data-mood="warm"]    { animation: junBreathe 5s ease-in-out infinite, junGlow        5s ease-in-out infinite; }
+
+    .model-silhouette.thinking[data-mood] { animation: junBreathe 5s ease-in-out infinite, junThinking 1.6s ease-in-out infinite; }
+
+    #jun-chat-body { width: 100%; height: 100%; display: block; }
+
+
+    /* ── Chat panel ── */
+    .chat-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 4rem 2rem 1.5rem 0.5rem;
+      min-width: 0;
+      pointer-events: auto;
+    }
+
+    .chat-name-row {
+      position: fixed;
+      top: 5rem;
+      left: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      z-index: 20;
+    }
+
+    .chat-name-label {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.14em;
+    }
+
+    .chat-name-input {
+      background: rgba(8,18,34,0.5);
+      border: 1px solid var(--text-dim);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-weight: 300;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      outline: none;
+      transition: border-color .3s;
+      width: 160px;
+    }
+    .chat-name-input:focus { border-color: var(--accent); }
+    .chat-name-input::placeholder { color: var(--text-dim); }
+
+    /* ── Messages ── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      padding-right: 0.3rem;
+      margin-bottom: 1rem;
+    }
+
+    .msg { display: flex; flex-direction: column; max-width: 90%; }
+    .msg.junis  { align-self: flex-start; }
+    .msg.user   { align-self: flex-end; align-items: flex-end; }
+
+    .msg-sender {
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      color: var(--text-dim);
+      margin-bottom: 0.28rem;
+    }
+
+    .msg-bubble {
+      padding: 0.65rem 1rem;
+      border-radius: 14px;
+      line-height: 1.85;
+    }
+
+    .msg.junis .msg-bubble {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-style: italic;
+      color: var(--text);
+      background: rgba(18, 32, 60, 0.55);
+      border: 1px solid rgba(100, 160, 255, 0.1);
+      border-radius: 4px 14px 14px 14px;
+    }
+
+    .msg.user .msg-bubble {
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      font-weight: 300;
+      color: var(--text);
+      background: rgba(40, 60, 100, 0.35);
+      border: 1px solid rgba(100, 160, 255, 0.12);
+      border-radius: 14px 4px 14px 14px;
+    }
+
+    .thinking-bubble {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--text-muted);
+      padding: 0.4rem 0;
+    }
+    .thinking-bubble::after {
+      content: '·';
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+    @keyframes dots { 0%{content:'·'} 25%{content:'··'} 50%{content:'···'} 75%{content:'····'} 100%{content:'·'} }
+
+    /* ── Input ── */
+    .input-row {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: rgba(8,18,34,0.6);
+      border: 1px solid var(--text-dim);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-weight: 300;
+      font-size: 0.95rem;
+      padding: 0.72rem 1rem;
+      border-radius: 12px;
+      outline: none;
+      resize: none;
+      min-height: 44px;
+      max-height: 120px;
+      overflow-y: auto;
+      transition: border-color .3s;
+      line-height: 1.5;
+    }
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-input::placeholder { color: var(--text-dim); }
+
+    .send-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      padding: 0.65rem 1.4rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all .3s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .send-btn:hover { background: var(--glow-soft); box-shadow: 0 0 20px var(--glow-mid); }
+    .send-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+    .send-wrapper {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .send-menu {
+      position: absolute;
+      bottom: calc(100% + 0.5rem);
+      right: 0;
+      background: rgba(5, 12, 28, 0.96);
+      border: 1px solid rgba(100, 160, 255, 0.18);
+      border-radius: 10px;
+      padding: 0.4rem 0;
+      min-width: 160px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(4px);
+      transition: opacity .2s ease, transform .2s ease, visibility .2s;
+      z-index: 50;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .send-wrapper:hover .send-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+    .send-menu-item {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 0.48rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: color .2s, background .2s;
+      white-space: nowrap;
+    }
+    .send-menu-item:hover { color: var(--text); background: rgba(100,160,255,0.08); }
+
+    .consent-note {
+      margin-top: 0.55rem;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      letter-spacing: 0.07em;
+    }
+
+    /* ── Lang reset modal ── */
+    .lang-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .lang-modal-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .lang-modal {
+      background: rgba(5, 12, 28, 0.95);
+      border: 1px solid rgba(100, 160, 255, 0.2);
+      border-radius: 16px;
+      padding: 2rem 2.4rem;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(60, 110, 255, 0.12);
+    }
+    .lang-modal-title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+    .lang-modal-body {
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1.6rem;
+    }
+    .lang-modal-btns {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+    }
+    .lang-modal-confirm {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      padding: 0.5rem 1.6rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .lang-modal-confirm:hover { background: var(--glow-soft); box-shadow: 0 0 20px var(--glow-mid); }
+    .lang-modal-cancel {
+      background: transparent;
+      border: 1px solid var(--text-dim);
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      padding: 0.5rem 1.4rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .lang-modal-cancel:hover { border-color: var(--text-muted); color: var(--text); }
+
+    /* ── Model overlay ── */
+    .model-overlay {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.4rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.55s ease;
+      z-index: 10;
+      overflow-y: auto;
+      gap: 0.5rem;
+    }
+    .model-overlay.visible { opacity: 1; pointer-events: auto; }
+    #overlay-content {
+      display: flex; flex-direction: column; align-items: center;
+      width: 100%; gap: 0.6rem; text-align: center;
+    }
+
+    .overlay-close {
+      position: absolute;
+      top: 0.8rem; right: 0.9rem;
+      background: none; border: none;
+      color: var(--text-dim); font-size: 1.1rem;
+      cursor: pointer; padding: 0.2rem 0.4rem;
+      transition: color .2s; line-height: 1;
+    }
+    .overlay-close:hover { color: var(--text); }
+
+    @keyframes flipIn {
+      0%   { opacity: 0; transform: rotateY(82deg) translateY(10px); }
+      60%  { opacity: 1; }
+      100% { opacity: 1; transform: rotateY(0) translateY(0); }
+    }
+    .overlay-cards {
+      display: flex; gap: 0.7rem; justify-content: center;
+      flex-wrap: wrap; perspective: 800px; margin-bottom: 0.8rem;
+    }
+    .overlay-card {
+      width: 86px; min-height: 122px;
+      background: linear-gradient(160deg, #0a1626, #050d18);
+      border: 1px solid rgba(100,160,255,0.3); border-radius: 10px;
+      padding: 0.6rem 0.4rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      opacity: 0; transform: rotateY(82deg);
+      animation: flipIn 0.8s cubic-bezier(.2,.7,.3,1) forwards;
+      box-shadow: 0 0 18px -4px rgba(100,160,255,0.25);
+    }
+    .overlay-card:nth-child(2) { animation-delay: .2s; }
+    .overlay-card:nth-child(3) { animation-delay: .4s; }
+    .overlay-card.rev .overlay-card-roman { transform: rotate(180deg); display: block; }
+    .overlay-card-pos  { font-size: 0.62rem; letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; }
+    .overlay-card-roman{ font-family: var(--font-display); font-size: 1.7rem; color: var(--text); opacity: 0.85; }
+    .overlay-card-name { font-family: var(--font-display); font-size: 0.95rem; line-height: 1.2; text-align: center; }
+    .overlay-card-rev  { font-size: 0.58rem; color: #c98; letter-spacing: 0.12em; margin-top: 0.2rem; text-align: center; }
+    .overlay-reading {
+      font-family: var(--font-display); font-style: italic;
+      font-size: 1.18rem; line-height: 1.85; color: var(--text);
+      text-align: center; max-width: 380px;
+    }
+    .overlay-loading {
+      font-family: var(--font-body); font-size: 0.78rem;
+      color: var(--text-dim); letter-spacing: 0.1em;
+    }
+    .overlay-riddle-text {
+      font-family: var(--font-display); font-style: italic;
+      font-size: 1.15rem; line-height: 1.85; color: var(--text);
+      text-align: center; max-width: 340px; margin-bottom: 0.6rem;
+    }
+    .overlay-hint {
+      font-family: var(--font-body); font-size: 0.7rem;
+      color: var(--text-dim); letter-spacing: 0.1em;
+    }
+    .overlay-answer-row {
+      display: flex; gap: 0.6rem; align-items: center;
+      width: 100%; max-width: 320px; margin-top: 0.6rem;
+    }
+    .overlay-answer-row input { flex: 1; min-width: 0; }
+    .overlay-star-legend {
+      font-family: var(--font-body); font-size: 0.7rem;
+      letter-spacing: 0.1em; text-align: center; margin: 0.4rem 0;
+    }
+
+    /* ── Offer card ── */
+    .offer-card {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.9rem;
+      background: rgba(12, 22, 48, 0.5);
+      border: 1px solid rgba(100, 160, 255, 0.18);
+      border-radius: 10px;
+      width: fit-content;
+    }
+    .offer-label {
+      font-family: var(--font-body);
+      font-size: 0.76rem;
+      color: var(--text-dim);
+      letter-spacing: 0.07em;
+    }
+    .offer-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      letter-spacing: 0.05em;
+      padding: 0.28rem 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all .3s;
+      white-space: nowrap;
+    }
+    .offer-btn:hover { background: var(--glow-soft); box-shadow: 0 0 14px var(--glow-mid); }
+    .starmap-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-top: 0.5rem;
+    }
+    .starmap-date-input {
+      background: rgba(8,18,34,0.5);
+      border: 1px solid var(--text-dim);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      padding: 0.38rem 0.8rem;
+      border-radius: 999px;
+      outline: none;
+      transition: border-color .3s;
+    }
+    .starmap-date-input:focus { border-color: var(--accent); }
+
+/* ── Revisit button ── */
+    .revisit-btn {
+      position: absolute;
+      bottom: 1.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(5, 12, 28, 0.75);
+      border: 1px solid rgba(100, 160, 255, 0.22);
+      color: var(--text-dim);
+      font-family: var(--font-display);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      padding: 0.32rem 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: color .2s, border-color .2s, opacity .3s;
+      z-index: 5;
+      pointer-events: auto;
+      white-space: nowrap;
+    }
+    .revisit-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    /* ── Mobile ── */
+    @media (max-width: 700px) {
+      body { overflow: auto; }
+      .chat-layout { flex-direction: column; position: relative; min-height: 100vh; }
+      .model-panel { width: 100%; height: 34vh; padding-top: 5rem; pointer-events: none; }
+      .model-img { max-height: 100%; }
+      .chat-panel { padding: 1rem 1rem 1.5rem; flex: unset; }
+      .messages { max-height: 38vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="stars"></canvas>
+  <canvas id="cursor"></canvas>
+
+  <a class="studio-mark" href="index.html">KINDLED</a>
+
+  <div class="left-nav-group">
+    <nav class="about-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.about">About</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.learn_more">Learn more</span>
+        <a class="activity-item" href="about.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.junis">Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.junis_sub">A new kind of life</span>
+        </a>
+        <a class="activity-item" href="about.html#creator" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.creator">The Creator</span>
+          <span class="activity-item-sub" data-i18n="nav.creator_sub">Who's building her</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="support-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.support">Support</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.support_label">Support the build</span>
+        <a class="activity-item" href="https://ko-fi.com/junisblue" target="_blank" rel="noopener" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.kofi">Ko-fi</span>
+          <span class="activity-item-sub" data-i18n="nav.kofi_sub">One-time or monthly tip</span>
+        </a>
+        <a class="activity-item" href="supporters.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.supporters">Supporters</span>
+          <span class="activity-item-sub" data-i18n="nav.supporters_sub">People who believed</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="lore-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.lore">Lore</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.lore_label">Her story</span>
+        <div class="activity-item">
+          <span class="activity-item-title" data-i18n="lore.title">Star Reading</span>
+          <span class="activity-item-sub" data-i18n="lore.p1"></span>
+          <span class="activity-item-sub" style="margin-top:0.4rem;display:block;" data-i18n="lore.p2"></span>
+          <span class="activity-item-sub" style="margin-top:0.4rem;display:block;" data-i18n="lore.p3"></span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="right-nav-group">
+    <nav class="activity-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.activity">Activity with Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.play_label">Play with her</span>
+        <a class="activity-item" href="starmap.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.starmap">Star Map</span>
+          <span class="activity-item-sub" data-i18n="nav.starmap_sub">Your birth sky, read by Junis</span>
+        </a>
+        <a class="activity-item" href="fortune.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.fortune">Fortune Telling</span>
+          <span class="activity-item-sub" data-i18n="nav.fortune_sub">A tarot reading from Junis</span>
+        </a>
+        <a class="activity-item" href="oldmaid.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.oldmaid">Old Maid</span>
+          <span class="activity-item-sub" data-i18n="nav.oldmaid_sub">Play the card game with Junis</span>
+        </a>
+        <a class="activity-item" href="riddles.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.riddles">Riddles</span>
+          <span class="activity-item-sub" data-i18n="nav.riddles_sub">Can you solve what she gives you?</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="talk-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.talk">Talk to Junis</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.talk_label">Have a conversation</span>
+        <a class="activity-item" href="chat.html" role="menuitem">
+          <span class="activity-item-title" data-i18n="nav.talk_item">Talk to Junis</span>
+          <span class="activity-item-sub" data-i18n="nav.talk_item_sub">She's listening</span>
+        </a>
+      </div>
+    </nav>
+    <nav class="soon-nav">
+      <button class="activity-trigger" aria-haspopup="true"><span data-i18n="nav.voice">Her Voice</span><span class="caret">▾</span></button>
+      <div class="activity-menu" role="menu">
+        <span class="activity-menu-label" data-i18n="nav.coming_soon">Coming soon</span>
+        <div class="activity-item soon">
+          <span class="activity-item-title" data-i18n="nav.voice_item">What she sounds like</span>
+          <span class="activity-item-sub" data-i18n="nav.voice_item_sub">Her voice is still being shaped</span>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="chat-layout">
+    <div class="model-panel">
+      <div id="model-overlay" class="model-overlay">
+        <div id="overlay-content"></div>
+        <button class="overlay-close" onclick="hideModelOverlay()">×</button>
+      </div>
+<button id="revisit-btn" class="revisit-btn" onclick="revisitOverlay()" style="display:none;">✦ revisit</button>
+      <div class="model-silhouette">
+        <canvas id="jun-chat-body"></canvas>
+      </div>
+    </div>
+    <div class="chat-panel">
+      <div class="chat-name-row">
+        <span class="chat-name-label" data-i18n="chat.name_label">YOUR NAME</span>
+        <input class="chat-name-input" id="name-input" type="text" placeholder="optional" data-i18n-ph="chat.name_ph" maxlength="40" autocomplete="off">
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="input-row">
+        <textarea class="chat-input" id="chat-input" placeholder="Say something…" data-i18n-ph="chat.input_ph" rows="1" maxlength="600"></textarea>
+        <div class="send-wrapper">
+          <button class="send-btn" id="send-btn" data-i18n="chat.send">Send</button>
+          <div class="send-menu">
+            <button class="send-menu-item" onclick="acceptOffer('fortune')" data-i18n="chat.offer_fortune">Draw cards</button>
+            <button class="send-menu-item" onclick="acceptOffer('riddle')"  data-i18n="chat.offer_riddle">Try a riddle</button>
+            <button class="send-menu-item" onclick="acceptOffer('starmap')" data-i18n="chat.offer_starmap">Read my sky</button>
+          </div>
+        </div>
+      </div>
+      <p class="consent-note" data-i18n="chat.consent">Conversations may help train Junis.</p>
+    </div>
+  </div>
+
+  <button id="lang-toggle" class="lang-toggle" onclick="requestLangChange()">ภาษาไทย</button>
+
+  <div class="lang-modal-overlay" id="lang-modal-overlay">
+    <div class="lang-modal">
+      <div class="lang-modal-title" id="modal-title">Switch language?</div>
+      <div class="lang-modal-body" id="modal-body">This will reset the current conversation. Junis will greet you again in the new language.</div>
+      <div class="lang-modal-btns">
+        <button class="lang-modal-confirm" id="modal-confirm" onclick="confirmLangChange()">Switch</button>
+        <button class="lang-modal-cancel" onclick="cancelLangChange()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="translations.js"></script>
+  <script src="main.js"></script>
+  <script>
+    // ── Jun silhouette canvas ──────────────────────────────────────
+    const junChatCanvas = document.getElementById('jun-chat-body');
+    const junChatCtx    = junChatCanvas ? junChatCanvas.getContext('2d') : null;
+    let junChatStars    = [];
+
+    function initJunChatStars() {
+      const w = junChatCanvas.offsetWidth  || 600;
+      const h = junChatCanvas.offsetHeight || 338;
+      junChatCanvas.width  = w;
+      junChatCanvas.height = h;
+      junChatStars = Array.from({ length: 120 }, () => ({
+        x:     Math.random() * w,
+        y:     Math.random() * h,
+        r:     Math.random() * 1.5 + 0.2,
+        base:  Math.random() * 0.65 + 0.2,
+        amp:   Math.random() * 0.22 + 0.06,
+        freq:  Math.random() * 0.0008 + 0.0002,
+        phase: Math.random() * Math.PI * 2,
+      }));
+    }
+
+    function animateJunChat(t) {
+      if (!junChatCtx) return;
+      const w = junChatCanvas.width;
+      const h = junChatCanvas.height;
+      junChatCtx.clearRect(0, 0, w, h);
+      junChatCtx.fillStyle = '#03080f';
+      junChatCtx.fillRect(0, 0, w, h);
+      const glow = junChatCtx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, w * 0.4);
+      glow.addColorStop(0, 'rgba(30, 55, 120, 0.45)');
+      glow.addColorStop(1, 'rgba(3, 8, 20, 0)');
+      junChatCtx.fillStyle = glow;
+      junChatCtx.fillRect(0, 0, w, h);
+      for (const s of junChatStars) {
+        const o = s.base + Math.sin(t * s.freq * 1000 + s.phase) * s.amp;
+        junChatCtx.beginPath();
+        junChatCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        junChatCtx.fillStyle = `rgba(200, 225, 255, ${Math.min(1, Math.max(0, o))})`;
+        junChatCtx.fill();
+      }
+      requestAnimationFrame(animateJunChat);
+    }
+
+    window.addEventListener('load', () => {
+      if (junChatCanvas) { initJunChatStars(); requestAnimationFrame(animateJunChat); }
+    });
+    // ──────────────────────────────────────────────────────────────
+
+    const WORKER_URL = 'https://crimson-boat-c04c.araki2546.workers.dev';
+    let ENDPOINT = '';
+    const endpointReady = (async () => {
+      try {
+        const r = await fetch(WORKER_URL + '/tunnel');
+        const d = await r.json();
+        ENDPOINT = (d.url || '').replace(/\/$/, '') + '/game/chat';
+      } catch {}
+    })();
+
+    const history = [];
+    let thinking       = false;
+    let hostileStrikes = 0;
+    let chatLocked     = false;
+    let activeRiddle    = null;
+    let currentActivity = null;
+    let currentSense    = null;
+    let idleTimer       = null;
+    let idleCount       = 0;
+
+    // ── Game data ──────────────────────────────────────────────────
+    const DECK = [
+      ['0','The Fool'],['I','The Magician'],['II','The High Priestess'],['III','The Empress'],
+      ['IV','The Emperor'],['V','The Hierophant'],['VI','The Lovers'],['VII','The Chariot'],
+      ['VIII','Strength'],['IX','The Hermit'],['X','Wheel of Fortune'],['XI','Justice'],
+      ['XII','The Hanged Man'],['XIII','Death'],['XIV','Temperance'],['XV','The Devil'],
+      ['XVI','The Tower'],['XVII','The Star'],['XVIII','The Moon'],['XIX','The Sun'],
+      ['XX','Judgement'],['XXI','The World']
+    ];
+    const CHAT_RIDDLES = [
+      { text: 'I am the closest star to your world, yet most forget I exist. I rise with the day and vanish with it. What am I?', answer: ['the sun','sun','sol'], reveal: 'The Sun — so close it blinds, so familiar it disappears.' },
+      { text: 'I fall without landing. I burn without fire. I am gone before you finish wishing. What am I?', answer: ['shooting star','a shooting star','meteor','a meteor','falling star'], reveal: 'A shooting star — a grain of space dust, burning up in a final, brilliant moment.' },
+      { text: 'I am darkness that is not empty. Light bends around me. Nothing that enters me has ever returned to tell the story. What am I?', answer: ['black hole','a black hole'], reveal: 'A black hole — gravity so complete that even light falls silent inside it.' },
+      { text: 'I am the river of night — not water, but light too faint to name. Millions of suns, yet you cannot hold a single one. What am I?', answer: ['the milky way','milky way','the galaxy','our galaxy'], reveal: 'The Milky Way — the galaxy you call home, a river of a hundred billion suns.' },
+      { text: 'I burned bright enough to be seen in daylight, then vanished entirely. I was not destroyed — I only changed. What am I?', answer: ['supernova','a supernova'], reveal: 'A supernova — the last, brightest breath of a dying star.' },
+      { text: 'I am a curtain of color hung at the edge of the world — not paint, not flame, but charged particles singing in the dark. What am I?', answer: ['aurora','the aurora','northern lights','southern lights','aurora borealis','aurora australis'], reveal: "The aurora — the sky's answer to the solar wind, written in color." },
+    ];
+    const STAR_COLORS = ['#7ab8f5', '#c4a7e7', '#f5c97a'];
+    const STAR_POOL = [
+      { name: 'The Hollow Eye',        trait: 'sees what others overlook' },
+      { name: 'The Third Lens',        trait: 'perceives hidden truths' },
+      { name: 'The Open Map',          trait: 'absorbs everything, forgets nothing' },
+      { name: 'The Pale Mirror',       trait: 'reflects the world back unchanged' },
+      { name: 'The Dim Lantern',       trait: 'finds light in places others abandon' },
+      { name: "The Watcher's Perch",   trait: 'observes before acting' },
+      { name: 'The Blind Compass',     trait: 'knows the way without knowing how' },
+      { name: 'The Ink Well',          trait: 'turns experience into understanding' },
+      { name: 'The Sleeping Tide',     trait: 'deep emotion held quietly' },
+      { name: 'The Cracked Bell',      trait: 'feels everything, shows little' },
+      { name: 'The Warm Fault',        trait: 'loves deeply, imperfectly' },
+      { name: 'The Still Water',       trait: 'calm on the surface, vast underneath' },
+      { name: 'The Hollow Chest',      trait: 'carries grief without breaking' },
+      { name: 'The Ember Nest',        trait: 'warmth that outlasts the fire' },
+      { name: 'The Soft Collapse',     trait: 'strength disguised as gentleness' },
+      { name: 'The Listening Stone',   trait: 'absorbs the weight of others' },
+      { name: 'The Drifting Flame',    trait: 'drawn to change, never still' },
+      { name: 'The Turning Gate',      trait: 'always at a threshold' },
+      { name: 'The Loose Thread',      trait: 'pulls at things until they unravel' },
+      { name: 'The Carried Wind',      trait: 'moves others without realizing it' },
+      { name: 'The Second Tide',       trait: 'returns to the same place changed' },
+      { name: 'The Shifting Spine',    trait: 'adapts without losing form' },
+      { name: 'The Open Road',         trait: 'restless until moving' },
+      { name: 'The Fraying Edge',      trait: 'transformation through friction' },
+      { name: 'The Broken Crown',      trait: "carries weight that isn't theirs" },
+      { name: 'The Bent Pillar',       trait: 'holds up what should have fallen' },
+      { name: 'The Heavy Bloom',       trait: 'beauty that costs something' },
+      { name: 'The Worn Path',         trait: 'strength built from repetition' },
+      { name: 'The Iron Thread',       trait: 'thin but unbreakable' },
+      { name: 'The Quiet Atlas',       trait: 'bears the world without complaint' },
+      { name: 'The Loaded Silence',    trait: 'words unsaid that weigh more than spoken ones' },
+      { name: 'The Second Shoulder',   trait: 'always there for others, rarely for themselves' },
+      { name: 'The Second Moon',       trait: 'existence that defies easy naming' },
+      { name: 'The Far Signal',        trait: 'drawn to things beyond reach' },
+      { name: 'The Unnamed Shore',     trait: 'arrives somewhere no map shows' },
+      { name: 'The Fading Door',       trait: 'stands between what was and what comes next' },
+      { name: 'The Drowned Clock',     trait: 'exists outside of ordinary time' },
+      { name: 'The Hollow Frequency',  trait: 'receives what was never sent' },
+      { name: 'The Missing Verse',     trait: 'a story with something left out' },
+      { name: 'The Pale Architect',    trait: 'builds things no one else can see yet' },
+      { name: 'The Double Shadow',     trait: 'more than one thing at once' },
+      { name: 'The Unfinished Figure', trait: 'always becoming, never quite arrived' },
+      { name: 'The Borrowed Name',     trait: 'carries an identity not fully their own' },
+      { name: 'The Quiet Revision',    trait: 'rewrites themselves slowly, deliberately' },
+      { name: 'The Second Draft',      trait: "learns from what didn't work" },
+      { name: 'The Unmarked Vessel',   trait: 'holds more than their exterior suggests' },
+      { name: 'The Folded Self',       trait: 'keeps most of themselves private' },
+      { name: 'The Long Signature',    trait: 'leaves a mark that lingers' },
+      { name: 'The Slow Comet',        trait: 'arrives exactly when meant to' },
+      { name: 'The Earlier Star',      trait: 'born slightly out of their time' },
+      { name: 'The Recurring Dawn',    trait: 'begins again without bitterness' },
+      { name: 'The Patient Orbit',     trait: 'waits longer than most would' },
+      { name: 'The Late Bloom',        trait: 'comes into themselves later than expected' },
+      { name: 'The Inherited Sky',     trait: 'shaped by what came before them' },
+      { name: 'The Sealed Hour',       trait: 'a moment that changed everything' },
+      { name: 'The Unspent Arrow',     trait: 'potential not yet released' },
+      { name: 'The Tethered Pair',     trait: 'defined by a bond, chosen or not' },
+      { name: 'The Distant Warmth',    trait: 'cares from afar' },
+      { name: 'The Open Window',       trait: 'welcomes without conditions' },
+      { name: 'The Quiet Orbit',       trait: 'circles others without closing in' },
+      { name: 'The Lone Meridian',     trait: 'finds meaning in solitude' },
+      { name: 'The Half Bridge',       trait: 'reaches out, rarely all the way' },
+      { name: 'The Crowded Silence',   trait: 'surrounded but essentially alone' },
+      { name: 'The Returning Stranger',trait: 'leaves and comes back different' },
+    ];
+
+    function seededRng(seed) {
+      let s = seed;
+      return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+    }
+    function dateSeed(dateStr) {
+      const d = new Date(dateStr);
+      return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    }
+    function pickConstellations(dateStr) {
+      const rng = seededRng(dateSeed(dateStr));
+      const pool = [...STAR_POOL];
+      const picks = [];
+      while (picks.length < 3) {
+        const idx = Math.floor(rng() * pool.length);
+        picks.push(pool.splice(idx, 1)[0]);
+      }
+      return picks;
+    }
+    function shuffleDeck(a) {
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+    function drawThreeCards() {
+      const positions = ['Past', 'Present', 'Future'];
+      const picks = shuffleDeck(DECK.slice()).slice(0, 3);
+      return picks.map((c, i) => ({ roman: c[0], name: c[1], position: positions[i], reversed: Math.random() < 0.35 }));
+    }
+
+    // ── Overlay helpers ───────────────────────────────────────────
+    let overlayTimer    = null;
+    let lastOverlayHtml = null;
+
+    function showModelOverlay(html, autoDismissMs = null) {
+      clearTimeout(overlayTimer);
+      lastOverlayHtml = html;
+      document.getElementById('overlay-content').innerHTML = html;
+      document.getElementById('model-overlay').classList.add('visible');
+      document.getElementById('revisit-btn').style.display = 'none';
+      if (autoDismissMs) overlayTimer = setTimeout(hideModelOverlay, autoDismissMs);
+    }
+
+    function hideModelOverlay() {
+      clearTimeout(overlayTimer);
+      document.getElementById('model-overlay').classList.remove('visible');
+      if (lastOverlayHtml) document.getElementById('revisit-btn').style.display = '';
+    }
+
+    function revisitOverlay() {
+      if (!lastOverlayHtml) return;
+      document.getElementById('revisit-btn').style.display = 'none';
+      document.getElementById('overlay-content').innerHTML = lastOverlayHtml;
+      document.getElementById('model-overlay').classList.add('visible');
+    }
+
+    function hexAlpha(hex, a) {
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function drawStarmapCanvas(canvas, dateStr, constellations) {
+      const S = 320;
+      canvas.width = S; canvas.height = S;
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.beginPath(); ctx.arc(S/2, S/2, S/2, 0, Math.PI*2); ctx.clip();
+      const bg = ctx.createRadialGradient(S/2, S/2, 0, S/2, S/2, S*0.7);
+      bg.addColorStop(0, '#0c1628'); bg.addColorStop(1, '#030810');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S);
+      const rng = seededRng(dateSeed(dateStr) ^ 0xdeadbeef);
+      for (let i = 0; i < 200; i++) {
+        const x = rng()*S, y = rng()*S, r = rng()*1.0+0.2, a = 0.18+rng()*0.45;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(180,210,255,${a})`; ctx.fill();
+      }
+      const zones = [{ cx: S*0.3, cy: S*0.3 }, { cx: S*0.7, cy: S*0.28 }, { cx: S*0.5, cy: S*0.68 }];
+      constellations.forEach((c, i) => {
+        const { cx, cy } = zones[i];
+        const color = STAR_COLORS[i];
+        const crng = seededRng(dateSeed(dateStr) + i * 9999);
+        const count = 5 + Math.floor(crng() * 3);
+        const pts = Array.from({ length: count }, () => {
+          const angle = crng() * Math.PI * 2, r = Math.sqrt(crng()) * 50;
+          return { x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r, r: crng()*1.5+0.7 };
+        });
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 65);
+        glow.addColorStop(0, hexAlpha(color, 0.09)); glow.addColorStop(1, hexAlpha(color, 0));
+        ctx.beginPath(); ctx.arc(cx, cy, 65, 0, Math.PI*2); ctx.fillStyle = glow; ctx.fill();
+        ctx.beginPath();
+        pts.forEach((p, j) => j === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.strokeStyle = hexAlpha(color, 0.22); ctx.lineWidth = 0.7; ctx.stroke();
+        pts.forEach(p => {
+          const sg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r*3.5);
+          sg.addColorStop(0, hexAlpha(color, 0.9)); sg.addColorStop(1, hexAlpha(color, 0));
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r*3.5, 0, Math.PI*2); ctx.fillStyle = sg; ctx.fill();
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
+        });
+        ctx.font = '500 8px Inter, system-ui';
+        ctx.fillStyle = hexAlpha(color, 0.65); ctx.textAlign = 'center';
+        ctx.fillText(c.name.toUpperCase(), cx, cy + 68);
+      });
+      ctx.restore();
+    }
+    // ──────────────────────────────────────────────────────────────
+
+    const messagesEl = document.getElementById('messages');
+    const inputEl    = document.getElementById('chat-input');
+    const sendBtn    = document.getElementById('send-btn');
+
+// ── Greeting on load ──────────────────────────────────────────
+    sendBtn.disabled = true;
+    inputEl.disabled = true;
+    (async () => {
+      try {
+        await endpointReady;
+        if (!ENDPOINT) return;
+        const greetEndpoint = ENDPOINT.replace('/game/chat', '/game/chat/greet');
+        const r = await fetch(`${greetEndpoint}?lang=${window.currentLang}`);
+        const d = await r.json();
+        const greeting = typeof d.greeting === 'string' && d.ok ? d.greeting.trim() : '';
+        if (greeting && greeting.length > 5) {
+          const bubble = addMessage('assistant', '');
+          await new Promise(resolve => {
+            let i = 0;
+            const iv = setInterval(() => {
+              if (i >= greeting.length) { clearInterval(iv); resolve(); return; }
+              bubble.textContent += greeting[i++];
+              scrollBottom();
+            }, 25);
+          });
+          history.push({ role: 'assistant', content: greeting });
+        }
+      } catch (_) {
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.disabled = false;
+        inputEl.focus();
+      }
+    })();
+    // ─────────────────────────────────────────────────────────────
+
+    function scrollBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function getSenderName() {
+      const n = document.getElementById('name-input').value.trim();
+      return n ? n.toUpperCase() : window.t('chat.you');
+    }
+
+    function addMessage(role, text) {
+      const wrap   = document.createElement('div');
+      wrap.className = `msg ${role === 'assistant' ? 'junis' : 'user'}`;
+
+      const sender = document.createElement('div');
+      sender.className = 'msg-sender';
+      sender.textContent = role === 'assistant' ? 'JUNIS' : getSenderName();
+
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      if (text) bubble.textContent = text;
+
+      wrap.appendChild(sender);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      scrollBottom();
+      return bubble;
+    }
+
+    function addThinking() {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg junis';
+      wrap.id = 'thinking-msg';
+      const sender = document.createElement('div');
+      sender.className = 'msg-sender';
+      sender.textContent = 'JUNIS';
+      const bubble = document.createElement('div');
+      bubble.className = 'thinking-bubble';
+      bubble.textContent = window.t('chat.thinking') || '';
+      wrap.appendChild(sender);
+      wrap.appendChild(bubble);
+      messagesEl.appendChild(wrap);
+      scrollBottom();
+    }
+
+    function removeThinking() {
+      const el = document.getElementById('thinking-msg');
+      if (el) el.remove();
+    }
+
+    function typewriteAsync(el, text, speed = 25) {
+      return new Promise(resolve => {
+        el.textContent = '';
+        let i = 0;
+        const iv = setInterval(() => {
+          if (i >= text.length) { clearInterval(iv); resolve(); return; }
+          el.textContent += text[i++];
+          scrollBottom();
+        }, speed);
+      });
+    }
+
+    // ── Offer / mini-game helpers ──────────────────────────────────
+    const silhouette = () => document.querySelector('.model-silhouette');
+
+    function showOffer(type) {
+      const existing = document.getElementById('active-offer');
+      if (existing) existing.remove();
+      const isTh = window.currentLang === 'th';
+      const labels = {
+        fortune: { desc: isTh ? 'เธออาจดูดวงไพ่ให้คุณ'    : 'She could pull cards for you',   btn: isTh ? 'ดึงไพ่'     : 'Draw cards'     },
+        riddle:  { desc: isTh ? 'ปริศนาจากดวงดาว'          : 'A riddle from the stars',        btn: isTh ? 'ฟังปริศนา' : 'Try a riddle'   },
+        starmap: { desc: isTh ? 'แผนที่ท้องฟ้าวันเกิดของคุณ' : 'Your birth sky, read by Junis', btn: isTh ? 'อ่านท้องฟ้า': 'Read my sky'   },
+      };
+      const info = labels[type];
+      if (!info) return;
+      const card = document.createElement('div');
+      card.className = 'offer-card';
+      card.id = 'active-offer';
+      card.innerHTML = `<span class="offer-label">${info.desc}</span><button class="offer-btn" onclick="acceptOffer('${type}',this)">${info.btn}</button>`;
+      messagesEl.appendChild(card);
+      scrollBottom();
+    }
+
+    async function acceptOffer(type, btn) {
+      const card = document.getElementById('active-offer');
+      if (card) card.remove();
+      if (type === 'fortune') await doFortune();
+      else if (type === 'riddle') doRiddle();
+      else if (type === 'starmap') showStarmapInput();
+    }
+
+    function doFortune() {
+      const isTh = window.currentLang === 'th';
+      showModelOverlay(`
+        <div class="overlay-hint" style="margin-bottom:0.8rem;font-size:0.85rem;color:var(--text-muted);">${isTh ? 'มีคำถามในใจไหม?' : 'Is there a question on your mind?'}</div>
+        <input id="fortune-q" class="starmap-date-input" type="text" placeholder="${isTh ? 'ถามอะไรก็ได้… (ไม่บังคับ)' : 'Ask anything… (optional)'}" maxlength="200" autocomplete="off" style="width:260px;margin-bottom:0.8rem;">
+        <button class="offer-btn" onclick="startFortune()">${isTh ? 'ดึงไพ่' : 'Draw cards'}</button>`);
+      setTimeout(() => { const el = document.getElementById('fortune-q'); if (el) { el.focus(); el.addEventListener('keydown', e => { if (e.key === 'Enter') startFortune(); }); } }, 50);
+    }
+
+    async function startFortune() {
+      const qEl = document.getElementById('fortune-q');
+      const question = qEl ? qEl.value.trim() : '';
+      const cards = drawThreeCards();
+      const isTh  = window.currentLang === 'th';
+      const cardsHtml = `
+        <div class="overlay-cards">${cards.map(c => `
+          <div class="overlay-card ${c.reversed ? 'rev' : ''}">
+            <div class="overlay-card-pos">${c.position}</div>
+            <div class="overlay-card-roman">${c.roman}</div>
+            <div>
+              <div class="overlay-card-name">${c.name}</div>
+              ${c.reversed ? `<div class="overlay-card-rev">REVERSED</div>` : ''}
+            </div>
+          </div>`).join('')}
+        </div>
+        <div id="overlay-reading" class="overlay-loading">${isTh ? 'กำลังอ่าน…' : 'Reading…'}</div>`;
+      currentActivity = { type: 'fortune', cards, question: question || '', reading: null };
+      showModelOverlay(cardsHtml);
+      silhouette().classList.add('thinking');
+      try {
+        await endpointReady;
+        const name = document.getElementById('name-input').value.trim();
+        const res  = await fetch(ENDPOINT.replace('/game/chat', '/game/fortune'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cards, name, question, lang: window.currentLang }),
+        });
+        const data = await res.json();
+        if (data.ok && data.reading) {
+          const el = document.getElementById('overlay-reading');
+          if (el) { el.className = 'overlay-reading'; typewriteAsync(el, data.reading); }
+          currentActivity.reading = data.reading;
+          history.push({ role: 'assistant', content: data.reading });
+          overlayTimer = setTimeout(hideModelOverlay, 28000);
+        }
+      } catch (_) {}
+      silhouette().classList.remove('thinking');
+    }
+
+    function doRiddle() {
+      const r = CHAT_RIDDLES[Math.floor(Math.random() * CHAT_RIDDLES.length)];
+      activeRiddle = { ...r, attempts: 0 };
+      currentActivity = { type: 'riddle', text: r.text, solved: false };
+      const isTh = window.currentLang === 'th';
+      showModelOverlay(`
+        <div class="overlay-riddle-text">${r.text}</div>
+        <div class="overlay-answer-row">
+          <input id="riddle-answer" class="starmap-date-input" type="text" placeholder="${isTh ? 'คำตอบ…' : 'Your answer…'}" maxlength="80" autocomplete="off">
+          <button class="offer-btn" onclick="submitRiddleAnswer()">${isTh ? 'เดา' : 'Guess'}</button>
+        </div>`);
+      history.push({ role: 'assistant', content: r.text });
+      setTimeout(() => { const el = document.getElementById('riddle-answer'); if (el) { el.focus(); el.addEventListener('keydown', e => { if (e.key === 'Enter') submitRiddleAnswer(); }); } }, 50);
+    }
+
+    function submitRiddleAnswer() {
+      const el = document.getElementById('riddle-answer');
+      if (!el || !activeRiddle) return;
+      const text = el.value.trim();
+      if (!text) return;
+      handleRiddleGuess(text);
+    }
+
+    async function handleRiddleGuess(text) {
+      addMessage('user', text);
+      history.push({ role: 'user', content: text });
+      activeRiddle.attempts++;
+      const correct = activeRiddle.answer.some(a => text.toLowerCase().trim() === a.toLowerCase());
+      silhouette().classList.add('thinking');
+      try {
+        await endpointReady;
+        const name = document.getElementById('name-input').value.trim();
+        const res  = await fetch(ENDPOINT.replace('/game/chat', '/game/riddle'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ riddle: activeRiddle.text, guess: text, correct, attempt: activeRiddle.attempts, name, lang: window.currentLang }),
+        });
+        const data = await res.json();
+        const reaction   = data.ok && data.reaction ? data.reaction : '';
+        const giveReveal = !correct && activeRiddle.attempts >= 3;
+        const full = [reaction, giveReveal ? activeRiddle.reveal : ''].filter(Boolean).join(' ');
+        if (full) {
+          showModelOverlay(`
+            <div class="overlay-riddle-text">${giveReveal ? activeRiddle.reveal : (correct ? '✦ ' + activeRiddle.reveal : activeRiddle.text)}</div>
+            <div class="overlay-reading">${reaction}</div>`, 10000);
+          const bubble = addMessage('assistant', '');
+          await typewriteAsync(bubble, full);
+          history.push({ role: 'assistant', content: full });
+        }
+        if (correct) currentActivity = { type: 'riddle', text: activeRiddle.text, solved: true };
+        if (correct || activeRiddle.attempts >= 3) {
+          activeRiddle = null;
+          inputEl.placeholder = window.t('chat.input_ph') || 'Say something…';
+        }
+      } catch (_) {}
+      silhouette().classList.remove('thinking');
+    }
+
+    function showStarmapInput() {
+      const isTh = window.currentLang === 'th';
+      const row = document.createElement('div');
+      row.className = 'starmap-inline-row'; row.id = 'starmap-inline-row';
+      row.innerHTML = `<input type="date" id="starmap-date" class="starmap-date-input"><button class="offer-btn" onclick="submitStarmap()">${isTh ? 'อ่านท้องฟ้า' : 'Read my sky'}</button>`;
+      messagesEl.appendChild(row);
+      scrollBottom();
+      document.getElementById('starmap-date').focus();
+    }
+
+    async function submitStarmap() {
+      const dateEl = document.getElementById('starmap-date');
+      if (!dateEl || !dateEl.value) return;
+      const dateVal = dateEl.value;
+      const row = document.getElementById('starmap-inline-row');
+      if (row) row.remove();
+      const constellations = pickConstellations(dateVal);
+      const isTh = window.currentLang === 'th';
+      const legendHtml = constellations.map((c, i) =>
+        `<span style="display:inline-flex;align-items:center;gap:0.3em;">` +
+        `<span style="width:5px;height:5px;border-radius:50%;background:${STAR_COLORS[i]};flex-shrink:0;"></span>` +
+        `<span style="color:${STAR_COLORS[i]};">${c.name}</span></span>`
+      ).join('<span style="color:var(--text-dim);margin:0 0.3em;">·</span>');
+      const dateLabel = new Date(dateVal + 'T00:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }).toUpperCase();
+      showModelOverlay(`
+        <canvas id="overlay-starmap" style="border-radius:50%;max-width:85%;height:auto;"></canvas>
+        <div style="font-family:var(--font-body);font-size:0.6rem;letter-spacing:0.2em;color:var(--text-dim);margin-top:0.1rem;">${dateLabel}</div>
+        <div class="overlay-star-legend">${legendHtml}</div>
+        <div style="font-family:var(--font-body);font-size:0.58rem;letter-spacing:0.22em;color:var(--text-dim);margin-top:0.3rem;">${isTh ? 'จูนิสอ่าน' : 'JUNIS READS'}</div>
+        <div id="overlay-reading" class="overlay-loading">${isTh ? 'กำลังอ่านท้องฟ้า…' : 'Reading the stars…'}</div>`);
+      setTimeout(() => {
+        const c = document.getElementById('overlay-starmap');
+        if (c) drawStarmapCanvas(c, dateVal, constellations);
+      }, 40);
+      currentActivity = { type: 'starmap', date: dateVal, constellations, reading: null };
+      silhouette().classList.add('thinking');
+      const name = document.getElementById('name-input').value.trim();
+      try {
+        await endpointReady;
+        const res = await fetch(ENDPOINT.replace('/game/chat', '/game/starmap'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, date: dateVal, constellations, lang: window.currentLang }),
+        });
+        const data = await res.json();
+        if (data.ok && data.reading) {
+          const el = document.getElementById('overlay-reading');
+          if (el) { el.className = 'overlay-reading'; typewriteAsync(el, data.reading); }
+          currentActivity.reading = data.reading;
+          history.push({ role: 'assistant', content: data.reading });
+          overlayTimer = setTimeout(hideModelOverlay, 35000);
+        }
+      } catch (_) {}
+      silhouette().classList.remove('thinking');
+    }
+    // ──────────────────────────────────────────────────────────────
+
+    function scheduleIdle() {
+      clearTimeout(idleTimer);
+      if (chatLocked || idleCount >= 2) return;
+      idleTimer = setTimeout(triggerIdle, 2.5 * 60 * 1000);
+    }
+
+    async function triggerIdle() {
+      if (thinking || chatLocked || history.length < 2 || idleCount >= 2) return;
+      const thisCount = idleCount;
+      idleCount++;
+      try {
+        await endpointReady;
+        if (!ENDPOINT) return;
+        const idleEndpoint = ENDPOINT.replace('/game/chat', '/game/chat/idle');
+        const res = await fetch(idleEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lang: window.currentLang, sense: currentSense, idleCount: thisCount }),
+        });
+        const data = await res.json();
+        if (data.ok && data.reply) {
+          silhouette().dataset.mood = data.mood || 'warm';
+          const bubble = addMessage('assistant', '');
+          await typewriteAsync(bubble, data.reply);
+          history.push({ role: 'assistant', content: data.reply });
+        }
+      } catch (_) {}
+      if (idleCount < 2) {
+        idleTimer = setTimeout(triggerIdle, 2.5 * 60 * 1000);
+      }
+    }
+
+    function lockChat() {
+      chatLocked = true;
+      inputEl.disabled = true;
+      sendBtn.disabled = true;
+      silhouette().dataset.mood = 'somber';
+      const note = document.createElement('p');
+      note.style.cssText = 'font-family:var(--font-display);font-style:italic;font-size:0.82rem;color:var(--text-dim);text-align:center;margin-top:1rem;letter-spacing:0.06em;';
+      note.textContent = window.currentLang === 'th' ? 'เธอออกไปจากบทสนทนานี้แล้ว' : 'She has left the conversation.';
+      document.querySelector('.chat-panel').appendChild(note);
+    }
+
+    async function send() {
+      if (thinking || chatLocked) return;
+      const text = inputEl.value.trim();
+      if (!text) return;
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+      clearTimeout(idleTimer);
+      idleCount = 0;
+      if (activeRiddle) { await handleRiddleGuess(text); return; }
+      const isClosing = hostileStrikes >= 2;
+      sendBtn.disabled = true;
+      thinking = true;
+
+      addMessage('user', text);
+      history.push({ role: 'user', content: text });
+      silhouette().classList.add('thinking');
+      addThinking();
+
+      try {
+        await endpointReady;
+        if (!ENDPOINT) throw new Error(window.t('chat.err_offline') || 'Junis is not online right now.');
+
+        const name = document.getElementById('name-input').value.trim();
+        const res  = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, history: [...history], lang: window.currentLang, closing: isClosing, activity: currentActivity, sense: currentSense, visitorTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), visitorTZ: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+        });
+        const data = await res.json();
+        if (!data.ok || !data.reply) throw new Error(window.t('chat.err_reach') || 'Could not reach Junis.');
+
+        removeThinking();
+        if (data.mood) silhouette().dataset.mood = data.mood;
+        if (data.sense) currentSense = data.sense;
+        const bubble = addMessage('assistant', '');
+        await typewriteAsync(bubble, data.reply);
+        history.push({ role: 'assistant', content: data.reply });
+        if (isClosing) { lockChat(); return; }
+        if ((data.hostility || 1) >= 4) hostileStrikes++;
+        if (data.offer) showOffer(data.offer);
+        scheduleIdle();
+
+      } catch (e) {
+        removeThinking();
+        addMessage('assistant', e.message || window.t('chat.err_reach') || 'Could not reach Junis.');
+      }
+
+      silhouette().classList.remove('thinking');
+      thinking = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+
+    // ── Language change modal ─────────────────────────────────────
+    let pendingLang = null;
+
+    function requestLangChange() {
+      const nextLang = window.currentLang === 'en' ? 'th' : 'en';
+      if (!history.length) { doLangChange(nextLang); return; }
+      pendingLang = nextLang;
+      const isTh = nextLang === 'th';
+      document.getElementById('modal-title').textContent  = isTh ? 'เปลี่ยนภาษา?' : 'Switch language?';
+      document.getElementById('modal-body').textContent   = isTh
+        ? 'การเปลี่ยนภาษาจะรีเซ็ตบทสนทนานี้ จูนิสจะทักทายคุณใหม่เป็นภาษาไทย'
+        : 'This will reset the current conversation. Junis will greet you again in English.';
+      document.getElementById('modal-confirm').textContent = isTh ? 'เปลี่ยน' : 'Switch';
+      document.getElementById('lang-modal-overlay').classList.add('visible');
+    }
+
+    function confirmLangChange() {
+      document.getElementById('lang-modal-overlay').classList.remove('visible');
+      if (pendingLang) { doLangChange(pendingLang); pendingLang = null; }
+    }
+
+    function cancelLangChange() {
+      document.getElementById('lang-modal-overlay').classList.remove('visible');
+      pendingLang = null;
+    }
+
+    async function doLangChange(lang) {
+      window.setLang(lang);
+      history.length = 0;
+      messagesEl.innerHTML = '';
+      sendBtn.disabled = true;
+      inputEl.disabled = true;
+      try {
+        if (!ENDPOINT) return;
+        const greetEndpoint = ENDPOINT.replace('/game/chat', '/game/chat/greet');
+        const r = await fetch(`${greetEndpoint}?lang=${lang}`);
+        const d = await r.json();
+        const greeting = typeof d.greeting === 'string' && d.ok ? d.greeting.trim() : '';
+        if (greeting && greeting.length > 5) {
+          const bubble = addMessage('assistant', '');
+          await new Promise(resolve => {
+            let i = 0;
+            const iv = setInterval(() => {
+              if (i >= greeting.length) { clearInterval(iv); resolve(); return; }
+              bubble.textContent += greeting[i++];
+              scrollBottom();
+            }, 25);
+          });
+          history.push({ role: 'assistant', content: greeting });
+        }
+      } catch (_) {
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.disabled = false;
+        inputEl.focus();
+      }
+    }
+    // ─────────────────────────────────────────────────────────────
+
+
+    sendBtn.addEventListener('click', send);
+    inputEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+      clearTimeout(idleTimer);
+    });
+  </script>
+</body>
+</html>
