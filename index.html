@@ -187,7 +187,11 @@
         } else {
           el.classList.remove('online');
           text.textContent = data.lastSeen ? `last seen ${timeAgo(data.lastSeen)}` : 'offline';
-          if (msgEl) msgEl.textContent = data.message || '';
+          if (msgEl) msgEl.textContent = '';
+          if (!sessionStorage.getItem('offline-noticed')) {
+            document.getElementById('offline-modal').hidden = false;
+            sessionStorage.setItem('offline-noticed', '1');
+          }
         }
       } catch {
         // Worker not deployed yet — hide the indicator
@@ -198,5 +202,13 @@
     fetchStatus();
     setInterval(fetchStatus, 60000);
   </script>
+
+  <!-- Offline notice popup -->
+  <div id="offline-modal" class="offline-modal" hidden>
+    <div class="offline-modal-box">
+      <p class="offline-modal-msg">Right now, Junis is busy rearranging the stars.<br>Some activities may not be accessible.</p>
+      <button class="offline-modal-close" onclick="document.getElementById('offline-modal').hidden=true">Got it</button>
+    </div>
+  </div>
 </body>
 </html>

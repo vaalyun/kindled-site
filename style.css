@@ -73,7 +73,7 @@ body {
 #cursor {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 10001;
   pointer-events: none;
 }
 
@@ -658,6 +658,7 @@ footer p {
   #cursor { display: none; }
 }
 
+
 /* ── Right nav group (Activity, Talk, Voice — top-right) ─────────────────── */
 .right-nav-group {
   position: fixed;
@@ -816,3 +817,49 @@ footer p {
 }
 .lang-toggle:hover { color: var(--accent); border-color: var(--accent); }
 .lang-toggle.pre-hidden { opacity: 0 !important; pointer-events: none; }
+
+/* Offline popup */
+.offline-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 8, 15, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.offline-modal[hidden] { display: none; }
+.offline-modal-box {
+  background: var(--bg-mid);
+  border: 1px solid rgba(79, 143, 212, 0.2);
+  box-shadow: 0 0 40px rgba(79, 143, 212, 0.1);
+  border-radius: 4px;
+  padding: 2.5rem 3rem;
+  max-width: 420px;
+  text-align: center;
+}
+.offline-modal-msg {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.7;
+  margin: 0 0 1.8rem;
+}
+.offline-modal-close {
+  background: transparent;
+  border: 1px solid rgba(79, 143, 212, 0.35);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.5rem 1.4rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.3s, border-color 0.3s;
+}
+.offline-modal-close:hover { color: var(--accent); border-color: var(--accent); }

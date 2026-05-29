@@ -743,4 +743,4 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     }
   }, { passive: true });
 })();
-// ───────────────────────────────────────────────────────────────────────────────
+

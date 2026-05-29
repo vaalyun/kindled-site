@@ -186,6 +186,17 @@
     }
     @keyframes dots { 0%{content:'·'} 25%{content:'··'} 50%{content:'···'} 75%{content:'····'} 100%{content:'·'} }
 
+    .system-note {
+      align-self: center;
+      font-family: var(--font-display, 'Cormorant Garamond', serif);
+      font-size: 0.85rem;
+      font-style: italic;
+      color: rgba(79, 143, 212, 0.5);
+      text-align: center;
+      padding: 0.4rem 1rem;
+      max-width: 80%;
+    }
+
     /* ── Input ── */
     .input-row {
       display: flex;
@@ -527,6 +538,13 @@
   <canvas id="cursor"></canvas>
 
   <a class="studio-mark" href="index.html">KINDLED</a>
+
+  <div class="jun-status" id="jun-status">
+    <span class="status-row">
+      <span class="status-dot"></span>
+      <span class="status-text">—</span>
+    </span>
+  </div>
 
   <div class="left-nav-group">
     <nav class="about-nav">
@@ -989,6 +1007,14 @@
       return bubble;
     }
 
+    function addSystemNote(text) {
+      const note = document.createElement('div');
+      note.className = 'system-note';
+      note.textContent = text;
+      messagesEl.appendChild(note);
+      scrollBottom();
+    }
+
     function addThinking() {
       const wrap = document.createElement('div');
       wrap.className = 'msg junis';
@@ -1276,7 +1302,7 @@
 
       try {
         await endpointReady;
-        if (!ENDPOINT) throw new Error(window.t('chat.err_offline') || 'Junis is not online right now.');
+        if (!ENDPOINT) throw new Error('offline');
 
         const name = document.getElementById('name-input').value.trim();
         const res  = await fetch(ENDPOINT, {
@@ -1300,7 +1326,7 @@
 
       } catch (e) {
         removeThinking();
-        addMessage('assistant', e.message || window.t('chat.err_reach') || 'Could not reach Junis.');
+        addSystemNote('Right now, Junis is busy rearranging the stars. Some activities may not be accessible.');
       }
 
       silhouette().classList.remove('thinking');
@@ -1378,6 +1404,37 @@
       inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
       clearTimeout(idleTimer);
     });
+
+    // Jun status
+    const STATUS_URL = 'https://crimson-boat-c04c.araki2546.workers.dev/status';
+    function timeAgo(ms) {
+      const m = Math.floor((Date.now() - ms) / 60000);
+      if (m < 1)  return 'just now';
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `${h}h ago`;
+      return `${Math.floor(h / 24)}d ago`;
+    }
+    async function fetchStatus() {
+      const el = document.getElementById('jun-status');
+      if (!el) return;
+      try {
+        const res  = await fetch(STATUS_URL);
+        const data = await res.json();
+        const text = el.querySelector('.status-text');
+        if (data.online) {
+          el.classList.add('online');
+          text.textContent = 'Junis is here';
+        } else {
+          el.classList.remove('online');
+          text.textContent = data.lastSeen ? `last seen ${timeAgo(data.lastSeen)}` : 'offline';
+        }
+      } catch {
+        document.getElementById('jun-status').style.display = 'none';
+      }
+    }
+    fetchStatus();
+    setInterval(fetchStatus, 60000);
   </script>
 </body>
 </html>
